@@ -1,1 +1,0 @@
-# organizations-edx-platform-extensions
