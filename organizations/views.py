@@ -18,7 +18,7 @@ from api_manager.courses.serializers import OrganizationCourseSerializer
 from organizations.models import Organization, OrganizationGroupUser
 from api_manager.users.serializers import SimpleUserSerializer
 from api_manager.groups.serializers import GroupSerializer
-from api_manager.permissions import SecureListAPIView, APIModelViewSet
+from api_manager.permissions import SecureListAPIView, SecurePaginatedModelViewSet
 from api_manager.utils import str2bool
 from gradebook.models import StudentGradebook
 from student.models import CourseEnrollment
@@ -27,7 +27,7 @@ from student.roles import get_aggregate_exclusion_user_ids
 from .serializers import OrganizationSerializer, BasicOrganizationSerializer, OrganizationWithCourseCountSerializer
 
 
-class OrganizationsViewSet(APIModelViewSet):
+class OrganizationsViewSet(SecurePaginatedModelViewSet):
     """
     Django Rest Framework ViewSet for the Organization model.
     """
