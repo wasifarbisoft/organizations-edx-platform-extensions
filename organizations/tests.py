@@ -175,7 +175,7 @@ class OrganizationsApiTests(ModuleStoreTestCase):
 
     def test_organizations_list_get(self):
         courses = CourseFactory.create_batch(5)
-        group = GroupFactory.create()
+        users = UserFactory.create_batch(5)
 
         organizations = []
         for i in xrange(30):
@@ -188,10 +188,13 @@ class OrganizationsApiTests(ModuleStoreTestCase):
             }
             organizations.append(self.setup_test_organization(org_data=data))
 
-        group.organizations.add(organizations[0]['id'])
 
-        for course in courses:
-            CourseGroupRelationship.objects.create(course_id=course.id, group=group)
+        for i, user in enumerate(users):
+            user.organizations.add(organizations[0]['id'])
+            CourseEnrollmentFactory.create(user=user, course_id=courses[i].id)
+
+        # to test if number_of_courses has distinct course count
+        CourseEnrollmentFactory.create(user=users[0], course_id=courses[1].id)
 
         test_uri = '{}'.format(self.base_organizations_uri)
         response = self.do_get(test_uri)

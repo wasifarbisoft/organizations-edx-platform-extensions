@@ -38,7 +38,7 @@ class OrganizationsViewSet(SecurePaginatedModelViewSet):
         self.serializer_class = OrganizationWithCourseCountSerializer
         queryset = self.get_queryset()
         self.queryset = queryset.annotate(
-            number_of_courses=Count('groups__coursegrouprelationship__course_id', distinct=True)
+            number_of_courses=Count('users__courseenrollment__course_id', distinct=True)
         )
 
         return super(OrganizationsViewSet, self).list(request, *args, **kwargs)
