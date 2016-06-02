@@ -366,11 +366,11 @@ class OrganizationsApiTests(ModuleStoreTestCase):
     def test_organizations_courses_get(self):
         organization = self.setup_test_organization()
         courses = CourseFactory.create_batch(2)
-        groups = GroupFactory.create_batch(2)
+        users = UserFactory.create_batch(2)
 
-        for i in xrange(2):
-            CourseGroupRelationship.objects.create(course_id=courses[i].id, group=groups[i])
-            groups[i].organizations.add(organization['id'])
+        for i, user in enumerate(users):
+            user.organizations.add(organization['id'])
+            CourseEnrollmentFactory.create(user=users[0], course_id=courses[i].id)
 
         test_uri = '{}{}/'.format(self.base_organizations_uri, organization['id'])
         courses_uri = '{}courses/'.format(test_uri)
@@ -378,24 +378,24 @@ class OrganizationsApiTests(ModuleStoreTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 2)
         self.assertEqual(response.data[0]['id'], unicode(courses[0].id))
-        self.assertEqual(len(response.data[0]['enrolled_users']), 0)
+        self.assertEqual(len(response.data[0]['enrolled_users']), 1)
         self.assertEqual(response.data[1]['id'], unicode(courses[1].id))
-        self.assertEqual(len(response.data[1]['enrolled_users']), 0)
+        self.assertEqual(len(response.data[1]['enrolled_users']), 1)
 
-        # test organization course having multiple coursegrouprelationships
-        CourseGroupRelationship.objects.create(course_id=courses[0].id, group=groups[1])
+        # test course uniqueness if multiple organization users are enrolled in same course
+        CourseEnrollmentFactory.create(user=users[1], course_id=courses[0].id)
         response = self.do_get(courses_uri)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 2)
         self.assertEqual(response.data[0]['id'], unicode(courses[0].id))
-        self.assertEqual(len(response.data[0]['enrolled_users']), 0)
+        self.assertEqual(len(response.data[0]['enrolled_users']), 2)
         self.assertEqual(response.data[1]['id'], unicode(courses[1].id))
-        self.assertEqual(len(response.data[1]['enrolled_users']), 0)
+        self.assertEqual(len(response.data[1]['enrolled_users']), 1)
 
-    def test_organizations_courses_get_organization_group_with_no_course(self):
+    def test_organizations_courses_get_organization_user_with_no_course_enrollment(self):
         organization = self.setup_test_organization()
-        group = GroupFactory.create()
-        group.organizations.add(organization['id'])
+        user = UserFactory.create()
+        user.organizations.add(organization['id'])
 
         courses_uri = '{}{}/courses/'.format(self.base_organizations_uri, organization['id'])
         response = self.do_get(courses_uri)
@@ -405,11 +405,11 @@ class OrganizationsApiTests(ModuleStoreTestCase):
     def test_organizations_courses_get_enrolled_users(self):
         organization = self.setup_test_organization()
         courses = CourseFactory.create_batch(2)
-        groups = GroupFactory.create_batch(2)
+        users = UserFactory.create_batch(2)
 
-        for i in xrange(2):
-            CourseGroupRelationship.objects.create(course_id=courses[i].id, group=groups[i])
-            groups[i].organizations.add(organization['id'])
+        for i, user in enumerate(users):
+            CourseEnrollmentFactory.create(user=user, course_id=courses[i].id)
+            user.organizations.add(organization['id'])
 
         CourseEnrollmentFactory.create(user=self.test_user, course_id=courses[0].id)
 
@@ -419,10 +419,12 @@ class OrganizationsApiTests(ModuleStoreTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 2)
         self.assertEqual(response.data[0]['id'], unicode(courses[0].id))
-        self.assertEqual(len(response.data[0]['enrolled_users']), 1)
+        self.assertEqual(len(response.data[0]['enrolled_users']), 2)
         self.assertEqual(response.data[0]['enrolled_users'][0], self.test_user.id)
+        self.assertEqual(response.data[0]['enrolled_users'][1], users[0].id)
         self.assertEqual(response.data[1]['id'], unicode(courses[1].id))
-        self.assertEqual(len(response.data[1]['enrolled_users']), 0)
+        self.assertEqual(len(response.data[1]['enrolled_users']), 1)
+        self.assertEqual(response.data[1]['enrolled_users'][0], users[1].id)
 
         CourseEnrollmentFactory.create(user=self.test_user, course_id=courses[1].id)
         CourseEnrollmentFactory.create(user=self.test_user2, course_id=courses[1].id)
@@ -431,12 +433,13 @@ class OrganizationsApiTests(ModuleStoreTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 2)
         self.assertEqual(response.data[0]['id'], unicode(courses[0].id))
-        self.assertEqual(len(response.data[0]['enrolled_users']), 1)
+        self.assertEqual(len(response.data[0]['enrolled_users']), 2)
         self.assertEqual(response.data[0]['enrolled_users'][0], self.test_user.id)
         self.assertEqual(response.data[1]['id'], unicode(courses[1].id))
-        self.assertEqual(len(response.data[1]['enrolled_users']), 2)
+        self.assertEqual(len(response.data[1]['enrolled_users']), 3)
         self.assertEqual(response.data[1]['enrolled_users'][0], self.test_user.id)
         self.assertEqual(response.data[1]['enrolled_users'][1], self.test_user2.id)
+        self.assertEqual(response.data[1]['enrolled_users'][2], users[1].id)
 
     def test_organizations_users_get_with_course_count(self):
         CourseEnrollmentFactory.create(user=self.test_user, course_id=self.course.id)
