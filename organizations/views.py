@@ -246,7 +246,8 @@ class OrganizationsViewSet(SecurePaginatedModelViewSet):
             .values_list('courseenrollment__course_id', flat=True).distinct()
 
         course_keys = map(get_course_key, filter(None, course_ids))
-        enrollment_qs = CourseEnrollment.objects.filter(is_active=True, course_id__in=course_keys)\
+        enrollment_qs = CourseEnrollment.objects\
+            .filter(user__organizations=organization, is_active=True, course_id__in=course_keys)\
             .values_list('course_id', 'user_id')
 
         enrollments = {}

@@ -405,14 +405,14 @@ class OrganizationsApiTests(ModuleStoreTestCase):
     def test_organizations_courses_get_enrolled_users(self):
         organization = self.setup_test_organization()
         courses = CourseFactory.create_batch(2)
-        users = UserFactory.create_batch(2)
+        users = UserFactory.create_batch(5)
 
         for i, user in enumerate(users):
-            CourseEnrollmentFactory.create(user=user, course_id=courses[i].id)
-            user.organizations.add(organization['id'])
+            CourseEnrollmentFactory.create(user=user, course_id=courses[i % 2].id)
+            if i < 3:
+                user.organizations.add(organization['id'])
 
-        CourseEnrollmentFactory.create(user=self.test_user, course_id=courses[0].id)
-
+        # test with all users enrolled but only 3 in organization
         test_uri = '{}{}/'.format(self.base_organizations_uri, organization['id'])
         courses_uri = '{}courses/'.format(test_uri)
         response = self.do_get(courses_uri)
@@ -420,26 +420,29 @@ class OrganizationsApiTests(ModuleStoreTestCase):
         self.assertEqual(len(response.data), 2)
         self.assertEqual(response.data[0]['id'], unicode(courses[0].id))
         self.assertEqual(len(response.data[0]['enrolled_users']), 2)
-        self.assertEqual(response.data[0]['enrolled_users'][0], self.test_user.id)
-        self.assertEqual(response.data[0]['enrolled_users'][1], users[0].id)
+        self.assertEqual(response.data[0]['enrolled_users'][0], users[0].id)
+        self.assertEqual(response.data[0]['enrolled_users'][1], users[2].id)
         self.assertEqual(response.data[1]['id'], unicode(courses[1].id))
         self.assertEqual(len(response.data[1]['enrolled_users']), 1)
         self.assertEqual(response.data[1]['enrolled_users'][0], users[1].id)
 
-        CourseEnrollmentFactory.create(user=self.test_user, course_id=courses[1].id)
-        CourseEnrollmentFactory.create(user=self.test_user2, course_id=courses[1].id)
+        # now add remaining 2 users to organization
+        for user in users[3:]:
+            user.organizations.add(organization['id'])
 
         response = self.do_get(courses_uri)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 2)
         self.assertEqual(response.data[0]['id'], unicode(courses[0].id))
-        self.assertEqual(len(response.data[0]['enrolled_users']), 2)
-        self.assertEqual(response.data[0]['enrolled_users'][0], self.test_user.id)
+        self.assertEqual(len(response.data[0]['enrolled_users']), 3)
+        self.assertEqual(response.data[0]['enrolled_users'][0], users[0].id)
+        self.assertEqual(response.data[0]['enrolled_users'][1], users[2].id)
+        self.assertEqual(response.data[0]['enrolled_users'][2], users[4].id)
         self.assertEqual(response.data[1]['id'], unicode(courses[1].id))
-        self.assertEqual(len(response.data[1]['enrolled_users']), 3)
-        self.assertEqual(response.data[1]['enrolled_users'][0], self.test_user.id)
-        self.assertEqual(response.data[1]['enrolled_users'][1], self.test_user2.id)
-        self.assertEqual(response.data[1]['enrolled_users'][2], users[1].id)
+        self.assertEqual(len(response.data[1]['enrolled_users']), 2)
+        self.assertEqual(response.data[1]['enrolled_users'][0], users[1].id)
+        self.assertEqual(response.data[1]['enrolled_users'][1], users[3].id)
+
 
     def test_organizations_users_get_with_course_count(self):
         CourseEnrollmentFactory.create(user=self.test_user, course_id=self.course.id)
