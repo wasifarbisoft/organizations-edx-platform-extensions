@@ -37,6 +37,11 @@ class OrganizationsViewSet(SecurePaginatedModelViewSet):
     def list(self, request, *args, **kwargs):
         self.serializer_class = OrganizationWithCourseCountSerializer
         queryset = self.get_queryset()
+
+        display_name = request.QUERY_PARAMS.get('display_name', None)
+        if display_name is not None:
+            queryset = queryset.filter(display_name=display_name)
+
         self.queryset = queryset.annotate(
             number_of_courses=Count('users__courseenrollment__course_id', distinct=True)
         )
