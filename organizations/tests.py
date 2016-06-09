@@ -226,6 +226,34 @@ class OrganizationsApiTests(ModuleStoreTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), len(organizations))
 
+    def test_organizations_list_get_filter_by_display_name(self):
+        organizations = []
+        organizations.append(self.setup_test_organization(org_data={'display_name': 'Abc Organization'}))
+        organizations.append(self.setup_test_organization(org_data={'display_name': 'Xyz Organization'}))
+        organizations.append(self.setup_test_organization(org_data={'display_name': 'Abc Organization'}))
+
+        # test for not matching organization
+        test_uri = '{}?display_name={}'.format(self.base_organizations_uri, 'no org')
+        response = self.do_get(test_uri)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data['results']), 0)
+
+        # test for matching organization
+        test_uri = '{}?display_name={}'.format(self.base_organizations_uri, 'Xyz Organization')
+        response = self.do_get(test_uri)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data['results']), 1)
+        self.assertEqual(response.data['results'][0]['display_name'], 'Xyz Organization')
+
+        # test for multiple matching organization with same display_name
+        test_uri = '{}?display_name={}'.format(self.base_organizations_uri, 'Abc Organization')
+        response = self.do_get(test_uri)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data['results']), 2)
+        self.assertEqual(response.data['results'][0]['display_name'], 'Abc Organization')
+        self.assertEqual(response.data['results'][1]['display_name'], 'Abc Organization')
+        self.assertNotEqual(response.data['results'][0]['id'], response.data['results'][1]['id'])
+
     def test_organizations_detail_get(self):
         org = self.setup_test_organization()
         test_uri = '{}{}/'.format(self.base_organizations_uri, org['id'])
