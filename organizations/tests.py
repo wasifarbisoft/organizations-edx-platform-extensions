@@ -226,6 +226,24 @@ class OrganizationsApiTests(ModuleStoreTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), len(organizations))
 
+    def test_organizations_list_number_of_participants(self):
+        """
+        Test number_of_participants field in organization list
+        """
+        number_of_participants = 5
+        users = UserFactory.create_batch(number_of_participants)
+        org = self.setup_test_organization()
+
+        # get org list without any users/participants
+        response = self.do_get(self.base_organizations_uri)
+        self.assertEqual(response.data['results'][0]['number_of_participants'], 0)
+
+        for user in users:
+            user.organizations.add(org['id'])
+
+        response = self.do_get(self.base_organizations_uri)
+        self.assertEqual(response.data['results'][0]['number_of_participants'], number_of_participants)
+
     def test_organizations_list_get_filter_by_display_name(self):
         organizations = []
         organizations.append(self.setup_test_organization(org_data={'display_name': 'Abc Organization'}))

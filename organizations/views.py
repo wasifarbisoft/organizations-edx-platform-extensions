@@ -44,6 +44,8 @@ class OrganizationsViewSet(SecurePaginatedModelViewSet):
 
         self.queryset = queryset.annotate(
             number_of_courses=Count('users__courseenrollment__course_id', distinct=True)
+        ).annotate(
+            number_of_participants=Count('users')
         )
 
         return super(OrganizationsViewSet, self).list(request, *args, **kwargs)
