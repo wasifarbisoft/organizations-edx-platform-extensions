@@ -13,13 +13,13 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.exceptions import ParseError
 
-from api_manager.courseware_access import get_course_key, get_course_descriptor
-from api_manager.courses.serializers import OrganizationCourseSerializer
+from edx_solutions_api_integration.courseware_access import get_course_key, get_course_descriptor
+from edx_solutions_api_integration.courses.serializers import OrganizationCourseSerializer
 from organizations.models import Organization, OrganizationGroupUser
-from api_manager.users.serializers import SimpleUserSerializer
-from api_manager.groups.serializers import GroupSerializer
-from api_manager.permissions import SecureListAPIView, SecurePaginatedModelViewSet
-from api_manager.utils import str2bool
+from edx_solutions_api_integration.users.serializers import SimpleUserSerializer
+from edx_solutions_api_integration.groups.serializers import GroupSerializer
+from edx_solutions_api_integration.permissions import SecureListAPIView, SecurePaginatedModelViewSet
+from edx_solutions_api_integration.utils import str2bool
 from gradebook.models import StudentGradebook
 from student.models import CourseEnrollment
 from student.roles import get_aggregate_exclusion_user_ids
