@@ -232,6 +232,7 @@ class OrganizationsApiTests(ModuleStoreTestCase):
         """
         number_of_participants = 5
         users = UserFactory.create_batch(number_of_participants)
+        courses = CourseFactory.create_batch(2)
         org = self.setup_test_organization()
 
         # get org list without any users/participants
@@ -240,6 +241,14 @@ class OrganizationsApiTests(ModuleStoreTestCase):
 
         for user in users:
             user.organizations.add(org['id'])
+
+        response = self.do_get(self.base_organizations_uri)
+        self.assertEqual(response.data['results'][0]['number_of_participants'], number_of_participants)
+
+        # enroll users in both course to test distinct count
+        for user in users:
+            CourseEnrollmentFactory.create(user=user, course_id=courses[0].id)
+            CourseEnrollmentFactory.create(user=user, course_id=courses[1].id)
 
         response = self.do_get(self.base_organizations_uri)
         self.assertEqual(response.data['results'][0]['number_of_participants'], number_of_participants)
