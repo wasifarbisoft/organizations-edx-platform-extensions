@@ -42,17 +42,17 @@ class Migration(SchemaMigration):
                 self.print_message(log_msg)
 
     models = {
-        'api_manager.coursecontentgrouprelationship': {
+        'edx_solutions_api_integration.coursecontentgrouprelationship': {
             'Meta': {'unique_together': "(('course_id', 'content_id', 'group_profile'),)", 'object_name': 'CourseContentGroupRelationship'},
             'content_id': ('django.db.models.fields.CharField', [], {'max_length': '255', 'db_index': 'True'}),
             'course_id': ('django.db.models.fields.CharField', [], {'max_length': '255', 'db_index': 'True'}),
             'created': ('model_utils.fields.AutoCreatedField', [], {'default': 'datetime.datetime.now'}),
-            'group_profile': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['api_manager.GroupProfile']"}),
+            'group_profile': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['edx_solutions_api_integration.GroupProfile']"}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'modified': ('model_utils.fields.AutoLastModifiedField', [], {'default': 'datetime.datetime.now'}),
             'record_active': ('django.db.models.fields.BooleanField', [], {'default': 'True'})
         },
-        'api_manager.coursegrouprelationship': {
+        'edx_solutions_api_integration.coursegrouprelationship': {
             'Meta': {'object_name': 'CourseGroupRelationship'},
             'course_id': ('django.db.models.fields.CharField', [], {'max_length': '255', 'db_index': 'True'}),
             'created': ('model_utils.fields.AutoCreatedField', [], {'default': 'datetime.datetime.now'}),
@@ -61,7 +61,7 @@ class Migration(SchemaMigration):
             'modified': ('model_utils.fields.AutoLastModifiedField', [], {'default': 'datetime.datetime.now'}),
             'record_active': ('django.db.models.fields.BooleanField', [], {'default': 'True'})
         },
-        'api_manager.coursemodulecompletion': {
+        'edx_solutions_api_integration.coursemodulecompletion': {
             'Meta': {'object_name': 'CourseModuleCompletion'},
             'content_id': ('django.db.models.fields.CharField', [], {'max_length': '255', 'db_index': 'True'}),
             'course_id': ('django.db.models.fields.CharField', [], {'max_length': '255', 'db_index': 'True'}),
@@ -71,7 +71,7 @@ class Migration(SchemaMigration):
             'stage': ('django.db.models.fields.CharField', [], {'max_length': '255', 'null': 'True', 'blank': 'True'}),
             'user': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'course_completions'", 'to': "orm['auth.User']"})
         },
-        'api_manager.groupprofile': {
+        'edx_solutions_api_integration.groupprofile': {
             'Meta': {'object_name': 'GroupProfile', 'db_table': "'auth_groupprofile'"},
             'created': ('model_utils.fields.AutoCreatedField', [], {'default': 'datetime.datetime.now'}),
             'data': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
@@ -82,23 +82,23 @@ class Migration(SchemaMigration):
             'name': ('django.db.models.fields.CharField', [], {'max_length': '255', 'null': 'True', 'blank': 'True'}),
             'record_active': ('django.db.models.fields.BooleanField', [], {'default': 'True'})
         },
-        'api_manager.grouprelationship': {
+        'edx_solutions_api_integration.grouprelationship': {
             'Meta': {'object_name': 'GroupRelationship'},
             'created': ('model_utils.fields.AutoCreatedField', [], {'default': 'datetime.datetime.now'}),
             'group': ('django.db.models.fields.related.OneToOneField', [], {'to': "orm['auth.Group']", 'unique': 'True', 'primary_key': 'True'}),
             'modified': ('model_utils.fields.AutoLastModifiedField', [], {'default': 'datetime.datetime.now'}),
             'name': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
-            'parent_group': ('django.db.models.fields.related.ForeignKey', [], {'default': '0', 'related_name': "'child_groups'", 'null': 'True', 'blank': 'True', 'to': "orm['api_manager.GroupRelationship']"}),
+            'parent_group': ('django.db.models.fields.related.ForeignKey', [], {'default': '0', 'related_name': "'child_groups'", 'null': 'True', 'blank': 'True', 'to': "orm['edx_solutions_api_integration.GroupRelationship']"}),
             'record_active': ('django.db.models.fields.BooleanField', [], {'default': 'True'})
         },
-        'api_manager.linkedgrouprelationship': {
+        'edx_solutions_api_integration.linkedgrouprelationship': {
             'Meta': {'object_name': 'LinkedGroupRelationship'},
             'created': ('model_utils.fields.AutoCreatedField', [], {'default': 'datetime.datetime.now'}),
-            'from_group_relationship': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'from_group_relationships'", 'to': "orm['api_manager.GroupRelationship']"}),
+            'from_group_relationship': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'from_group_relationships'", 'to': "orm['edx_solutions_api_integration.GroupRelationship']"}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'modified': ('model_utils.fields.AutoLastModifiedField', [], {'default': 'datetime.datetime.now'}),
             'record_active': ('django.db.models.fields.BooleanField', [], {'default': 'True'}),
-            'to_group_relationship': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'to_group_relationships'", 'to': "orm['api_manager.GroupRelationship']"})
+            'to_group_relationship': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'to_group_relationships'", 'to': "orm['edx_solutions_api_integration.GroupRelationship']"})
         },
         'auth.group': {
             'Meta': {'object_name': 'Group'},
@@ -138,4 +138,4 @@ class Migration(SchemaMigration):
         }
     }
 
-    complete_apps = ['api_manager']
+    complete_apps = ['edx_solutions_api_integration']
