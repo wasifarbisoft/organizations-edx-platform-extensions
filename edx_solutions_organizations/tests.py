@@ -2,7 +2,7 @@
 
 """
 Run these tests @ Devstack:
-    rake fasttest_lms[common/djangoapps/edx_solutions_api_integration/organizations/tests.py]
+paver test_system -s lms -t organizations
 """
 import json
 import uuid
@@ -16,9 +16,8 @@ from django.test.utils import override_settings
 from django.utils.translation import ugettext as _
 from rest_framework.test import APIClient
 
-from edx_solutions_api_integration.models import CourseGroupRelationship
 from gradebook.models import StudentGradebook
-from organizations.models import OrganizationGroupUser
+from .models import OrganizationGroupUser
 from student.models import UserProfile
 from xmodule.modulestore.tests.django_utils import ModuleStoreTestCase, mixed_store_config
 from student.tests.factories import CourseEnrollmentFactory, UserFactory, GroupFactory

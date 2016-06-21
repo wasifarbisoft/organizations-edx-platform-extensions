@@ -15,7 +15,6 @@ from rest_framework.exceptions import ParseError
 
 from edx_solutions_api_integration.courseware_access import get_course_key, get_course_descriptor
 from edx_solutions_api_integration.courses.serializers import OrganizationCourseSerializer
-from organizations.models import Organization, OrganizationGroupUser
 from edx_solutions_api_integration.users.serializers import SimpleUserSerializer
 from edx_solutions_api_integration.groups.serializers import GroupSerializer
 from edx_solutions_api_integration.permissions import SecureListAPIView, SecurePaginatedModelViewSet
@@ -25,6 +24,7 @@ from student.models import CourseEnrollment
 from student.roles import get_aggregate_exclusion_user_ids
 
 from .serializers import OrganizationSerializer, BasicOrganizationSerializer, OrganizationWithCourseCountSerializer
+from .models import Organization, OrganizationGroupUser
 
 
 class OrganizationsViewSet(SecurePaginatedModelViewSet):
