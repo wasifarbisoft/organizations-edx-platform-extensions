@@ -5,7 +5,7 @@ from django.contrib.auth.models import Group, User
 from django.db import models
 
 from model_utils.models import TimeStampedModel
-from projects.models import Workgroup
+from edx_solutions_projects.models import Workgroup
 
 
 class Organization(TimeStampedModel):
