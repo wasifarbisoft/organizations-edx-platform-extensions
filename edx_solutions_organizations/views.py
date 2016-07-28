@@ -9,7 +9,7 @@ from django.db import IntegrityError
 from django.utils.translation import ugettext as _
 
 from rest_framework import status
-from rest_framework.decorators import action
+from rest_framework.decorators import detail_route, list_route
 from rest_framework.response import Response
 from rest_framework.exceptions import ParseError
 
@@ -32,13 +32,13 @@ class OrganizationsViewSet(SecurePaginatedModelViewSet):
     Django Rest Framework ViewSet for the Organization model.
     """
     serializer_class = OrganizationSerializer
-    model = Organization
+    queryset = Organization.objects.all()
 
     def list(self, request, *args, **kwargs):
         self.serializer_class = OrganizationWithCourseCountSerializer
         queryset = self.get_queryset()
 
-        display_name = request.QUERY_PARAMS.get('display_name', None)
+        display_name = request.query_params.get('display_name', None)
         if display_name is not None:
             queryset = queryset.filter(display_name=display_name)
 
@@ -54,7 +54,7 @@ class OrganizationsViewSet(SecurePaginatedModelViewSet):
         self.serializer_class = BasicOrganizationSerializer
         return super(OrganizationsViewSet, self).retrieve(request, *args, **kwargs)
 
-    @action(methods=['get', ])
+    @detail_route(methods=['get', ])
     def metrics(self, request, pk):
         """
         Provide statistical information for the specified Organization
@@ -63,7 +63,7 @@ class OrganizationsViewSet(SecurePaginatedModelViewSet):
         grade_avg = 0
         grade_complete_match_range = getattr(settings, 'GRADEBOOK_GRADE_COMPLETE_PROFORMA_MATCH_RANGE', 0.01)
         org_user_grades = StudentGradebook.objects.filter(user__organizations=pk, user__is_active=True)
-        courses_filter = request.QUERY_PARAMS.get('courses', None)
+        courses_filter = request.query_params.get('courses', None)
         courses = []
         exclude_users = set()
         if courses_filter:
@@ -105,7 +105,7 @@ class OrganizationsViewSet(SecurePaginatedModelViewSet):
 
         return Response(response_data, status=status.HTTP_200_OK)
 
-    @action(methods=['get', 'post', 'delete'])
+    @detail_route(methods=['get', 'post', 'delete'])
     def users(self, request, pk):
         """
         - URI: ```/api/organizations/{org_id}/users/```
@@ -120,10 +120,10 @@ class OrganizationsViewSet(SecurePaginatedModelViewSet):
         - DELETE: Removes the user(s) given in the `users` param from an Organization.
         """
         if request.method == 'GET':
-            include_course_counts = request.QUERY_PARAMS.get('include_course_counts', None)
-            include_grades = request.QUERY_PARAMS.get('include_grades', None)
-            course_id = request.QUERY_PARAMS.get('course_id', None)
-            view = request.QUERY_PARAMS.get('view', None)
+            include_course_counts = request.query_params.get('include_course_counts', None)
+            include_grades = request.query_params.get('include_grades', None)
+            course_id = request.query_params.get('course_id', None)
+            view = request.query_params.get('view', None)
             grade_complete_match_range = getattr(settings, 'GRADEBOOK_GRADE_COMPLETE_PROFORMA_MATCH_RANGE', 0.01)
             course_key = None
             if course_id:
@@ -135,7 +135,7 @@ class OrganizationsViewSet(SecurePaginatedModelViewSet):
                 users = users.filter(courseenrollment__course_id__exact=course_key,
                                      courseenrollment__is_active=True)
             if str2bool(include_grades):
-                users = users.select_related('studentgradebook')
+                users = users.prefetch_related('studentgradebook')
 
             if str2bool(include_course_counts):
                 enrollments = CourseEnrollment.objects.filter(user__in=users).values('user').order_by().annotate(total=Count('user'))
@@ -159,7 +159,7 @@ class OrganizationsViewSet(SecurePaginatedModelViewSet):
 
                     if str2bool(include_grades) and course_key:
                         user_grades = {'grade': 0, 'proforma_grade': 0, 'complete_status': False}
-                        gradebook = user.studentgradebook_set.filter(course_id=course_key)
+                        gradebook = user.studentgradebook.filter(course_id=course_key)
                         if gradebook:
                             user_grades['grade'] = gradebook[0].grade
                             user_grades['proforma_grade'] = gradebook[0].proforma_grade
@@ -170,12 +170,12 @@ class OrganizationsViewSet(SecurePaginatedModelViewSet):
                     response_data.append(user_data)
             return Response(response_data, status=status.HTTP_200_OK)
         elif request.method == 'DELETE':
-            user_ids = request.DATA.get('users')
+            user_ids = request.data.get('users')
             if not user_ids:
                 return Response({"detail": _('users parameter is missing.')}, status.HTTP_400_BAD_REQUEST)
             try:
                 user_ids = [int(user_id) for user_id in filter(None, user_ids.split(','))]
-            except ValueError:
+            except (ValueError, AttributeError):
                 return Response({
                     "detail": _('users parameter must be comma separated list of integers.')
                 }, status.HTTP_400_BAD_REQUEST)
@@ -192,7 +192,7 @@ class OrganizationsViewSet(SecurePaginatedModelViewSet):
             else:
                 return Response(status=status.HTTP_204_NO_CONTENT)
         else:
-            user_id = request.DATA.get('id')
+            user_id = request.data.get('id')
             try:
                 user = User.objects.get(id=user_id)
             except ObjectDoesNotExist:
@@ -203,7 +203,7 @@ class OrganizationsViewSet(SecurePaginatedModelViewSet):
             organization.save()
             return Response({}, status=status.HTTP_201_CREATED)
 
-    @action(methods=['get', 'post'])
+    @detail_route(methods=['get', 'post'])
     def groups(self, request, pk):
         """
         Add a Group to a organization or retrieve list of groups in organization
@@ -213,8 +213,8 @@ class OrganizationsViewSet(SecurePaginatedModelViewSet):
 
         """
         if request.method == 'GET':
-            group_type = request.QUERY_PARAMS.get('type', None)
-            view = request.QUERY_PARAMS.get('view', None)
+            group_type = request.query_params.get('type', None)
+            view = request.query_params.get('view', None)
             groups = Group.objects.filter(organizations=pk)
 
             if group_type:
@@ -228,11 +228,11 @@ class OrganizationsViewSet(SecurePaginatedModelViewSet):
             response_data = []
             if groups:
                 for group in groups:
-                    serializer = GroupSerializer(group)
+                    serializer = GroupSerializer(group, context={'request': request})
                     response_data.append(serializer.data)  # pylint: disable=E1101
             return Response(response_data, status=status.HTTP_200_OK)
         else:
-            group_id = request.DATA.get('id')
+            group_id = request.data.get('id')
             try:
                 group = Group.objects.get(id=group_id)
             except ObjectDoesNotExist:
@@ -243,7 +243,7 @@ class OrganizationsViewSet(SecurePaginatedModelViewSet):
             organization.save()
             return Response({}, status=status.HTTP_201_CREATED)
 
-    @action(methods=['get', ])
+    @detail_route(methods=['get', ])
     def courses(self, request, pk):  # pylint: disable=W0613
         """
         Returns list of courses in an organization
@@ -269,7 +269,7 @@ class OrganizationsViewSet(SecurePaginatedModelViewSet):
                 setattr(course_descriptor, 'enrolled_users', enrolled_users)
                 response_data.append(course_descriptor)
 
-        serializer = OrganizationCourseSerializer(response_data, many=True)
+        serializer = OrganizationCourseSerializer(response_data, many=True, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
@@ -322,7 +322,7 @@ class OrganizationsGroupsUsersList(SecureListAPIView):
         """
         GET /api/organizations/{organization_id}/groups/{group_id}/users
         """
-        user_ids = request.DATA.get('users')
+        user_ids = request.data.get('users')
         try:
             user_ids = map(int, filter(None, user_ids.split(',')))
         except Exception:
@@ -357,7 +357,7 @@ class OrganizationsGroupsUsersList(SecureListAPIView):
         """
         DELETE /api/organizations/{organization_id}/groups/{group_id}/users
         """
-        user_ids = request.DATA.get('users')
+        user_ids = request.data.get('users')
         try:
             user_ids = map(int, filter(None, user_ids.split(',')))
         except Exception:
