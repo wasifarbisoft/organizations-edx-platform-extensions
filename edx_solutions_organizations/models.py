@@ -19,8 +19,8 @@ class Organization(TimeStampedModel):
     contact_email = models.EmailField(max_length=255, null=True, blank=True)
     contact_phone = models.CharField(max_length=50, null=True, blank=True)
     logo_url = models.CharField(max_length=255, blank=True, null=True)
-    users = models.ManyToManyField(User, related_name="organizations", null=True, blank=False)
-    groups = models.ManyToManyField(Group, related_name="organizations", null=True, blank=False)
+    users = models.ManyToManyField(User, related_name="organizations", blank=False)
+    groups = models.ManyToManyField(Group, related_name="organizations", blank=False)
 
 
 class OrganizationGroupUser(TimeStampedModel):

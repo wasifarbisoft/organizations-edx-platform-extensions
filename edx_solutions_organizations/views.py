@@ -135,7 +135,7 @@ class OrganizationsViewSet(SecurePaginatedModelViewSet):
                 users = users.filter(courseenrollment__course_id__exact=course_key,
                                      courseenrollment__is_active=True)
             if str2bool(include_grades):
-                users = users.prefetch_related('studentgradebook')
+                users = users.prefetch_related('studentgradebook_set')
 
             if str2bool(include_course_counts):
                 enrollments = CourseEnrollment.objects.filter(user__in=users).values('user').order_by().annotate(total=Count('user'))
@@ -159,7 +159,7 @@ class OrganizationsViewSet(SecurePaginatedModelViewSet):
 
                     if str2bool(include_grades) and course_key:
                         user_grades = {'grade': 0, 'proforma_grade': 0, 'complete_status': False}
-                        gradebook = user.studentgradebook.filter(course_id=course_key)
+                        gradebook = user.studentgradebook_set.filter(course_id=course_key)
                         if gradebook:
                             user_grades['grade'] = gradebook[0].grade
                             user_grades['proforma_grade'] = gradebook[0].proforma_grade
