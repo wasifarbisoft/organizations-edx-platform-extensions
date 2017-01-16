@@ -4,7 +4,6 @@
 Run these tests @ Devstack:
 paver test_system -s lms -t organizations
 """
-import json
 import uuid
 import mock
 from urllib import urlencode
@@ -14,7 +13,6 @@ from django.contrib.auth.models import User
 from django.core.cache import cache
 from django.test.utils import override_settings
 from django.utils.translation import ugettext as _
-from rest_framework.test import APIClient
 
 from gradebook.models import StudentGradebook
 from .models import OrganizationGroupUser
@@ -22,28 +20,20 @@ from student.models import UserProfile
 from xmodule.modulestore.tests.django_utils import ModuleStoreTestCase, mixed_store_config
 from student.tests.factories import CourseEnrollmentFactory, UserFactory, GroupFactory
 from xmodule.modulestore.tests.factories import CourseFactory
-TEST_API_KEY = str(uuid.uuid4())
+from edx_solutions_api_integration.test_utils import (
+    APIClientMixin,
+)
 
-MODULESTORE_CONFIG = mixed_store_config(settings.COMMON_TEST_DATA_ROOT, {}, include_xml=False)
 
-
-class SecureClient(APIClient):
-
-    """ Django test client using a "secure" connection. """
-
-    def __init__(self, *args, **kwargs):
-        kwargs = kwargs.copy()
-        kwargs.update({'SERVER_PORT': 443, 'wsgi.url_scheme': 'https'})
-        super(SecureClient, self).__init__(*args, **kwargs)
+MODULESTORE_CONFIG = mixed_store_config(settings.COMMON_TEST_DATA_ROOT, {})
 
 
 @override_settings(MODULESTORE=MODULESTORE_CONFIG)
-@override_settings(EDX_API_KEY=TEST_API_KEY)
 @mock.patch.dict("django.conf.settings.FEATURES", {'ENFORCE_PASSWORD_POLICY': False,
                                                    'ADVANCED_SECURITY': False,
                                                    'PREVENT_CONCURRENT_LOGINS': False
                                                    })
-class OrganizationsApiTests(ModuleStoreTestCase):
+class OrganizationsApiTests(ModuleStoreTestCase, APIClientMixin):
     """ Test suite for Users API views """
 
     def setUp(self):
@@ -82,37 +72,7 @@ class OrganizationsApiTests(ModuleStoreTestCase):
             number="899"
         )
 
-        self.client = SecureClient()
         cache.clear()
-
-    def do_post(self, uri, data):
-        """Submit an HTTP POST request"""
-        headers = {
-            'X-Edx-Api-Key': str(TEST_API_KEY),
-        }
-        json_data = json.dumps(data)
-
-        response = self.client.post(
-            uri, headers=headers, content_type='application/json', data=json_data)
-        return response
-
-    def do_get(self, uri):
-        """Submit an HTTP GET request"""
-        headers = {
-            'Content-Type': 'application/json',
-            'X-Edx-Api-Key': str(TEST_API_KEY),
-        }
-        response = self.client.get(uri, headers=headers)
-        return response
-
-    def do_delete(self, uri, data):
-        """Submit an HTTP DELETE request"""
-        headers = {
-            'Content-Type': 'application/json',
-            'X-Edx-Api-Key': str(TEST_API_KEY),
-        }
-        response = self.client.delete(uri, data, headers=headers)
-        return response
 
     def setup_test_organization(self, org_data=None):
         """
@@ -603,7 +563,7 @@ class OrganizationsApiTests(ModuleStoreTestCase):
         response = self.do_delete(users_uri, data=data)
         self.assertEqual(response.status_code, 400)
 
-        data = {"users": 112323333329}
+        data = {"users": '112323333329'}
         response = self.do_delete(users_uri, data=data)
         self.assertEqual(response.status_code, 204)
 
@@ -614,7 +574,7 @@ class OrganizationsApiTests(ModuleStoreTestCase):
         organization = self.setup_test_organization()
         test_uri = '{}{}/'.format(self.base_organizations_uri, organization['id'])
         users_uri = '{}users/'.format(test_uri)
-        data = {"users": 112323333329}
+        data = {"users": '112323333329'}
         response = self.do_delete(users_uri, data=data)
         self.assertEqual(response.status_code, 204)
 
