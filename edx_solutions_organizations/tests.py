@@ -6,6 +6,7 @@ paver test_system -s lms -t organizations
 """
 import uuid
 import mock
+import ddt
 from urllib import urlencode
 
 from django.conf import settings
@@ -17,24 +18,26 @@ from django.utils.translation import ugettext as _
 from gradebook.models import StudentGradebook
 from .models import OrganizationGroupUser
 from student.models import UserProfile
-from xmodule.modulestore.tests.django_utils import ModuleStoreTestCase, mixed_store_config
 from student.tests.factories import CourseEnrollmentFactory, UserFactory, GroupFactory
 from xmodule.modulestore.tests.factories import CourseFactory
 from edx_solutions_api_integration.test_utils import (
     APIClientMixin,
 )
+from xmodule.modulestore import ModuleStoreEnum
+from xmodule.modulestore.tests.django_utils import (
+    ModuleStoreTestCase,
+    TEST_DATA_SPLIT_MODULESTORE
+)
 
-
-MODULESTORE_CONFIG = mixed_store_config(settings.COMMON_TEST_DATA_ROOT, {})
-
-
-@override_settings(MODULESTORE=MODULESTORE_CONFIG)
 @mock.patch.dict("django.conf.settings.FEATURES", {'ENFORCE_PASSWORD_POLICY': False,
                                                    'ADVANCED_SECURITY': False,
                                                    'PREVENT_CONCURRENT_LOGINS': False
                                                    })
+@ddt.ddt
 class OrganizationsApiTests(ModuleStoreTestCase, APIClientMixin):
     """ Test suite for Users API views """
+
+    MODULESTORE = TEST_DATA_SPLIT_MODULESTORE
 
     def setUp(self):
         super(OrganizationsApiTests, self).setUp()
@@ -457,7 +460,6 @@ class OrganizationsApiTests(ModuleStoreTestCase, APIClientMixin):
         self.assertEqual(response.data[1]['enrolled_users'][0], users[1].id)
         self.assertEqual(response.data[1]['enrolled_users'][1], users[3].id)
 
-
     def test_organizations_users_get_with_course_count(self):
         CourseEnrollmentFactory.create(user=self.test_user, course_id=self.course.id)
         CourseEnrollmentFactory.create(user=self.test_user2, course_id=self.course.id)
@@ -501,7 +503,9 @@ class OrganizationsApiTests(ModuleStoreTestCase, APIClientMixin):
             data = {"id": user.id}
             response = self.do_post(users_uri, data)
             self.assertEqual(response.status_code, 201)
-        response = self.do_get('{}?{}&course_id={}'.format(users_uri, 'include_grades=True', self.course.id))
+
+        params = {'course_id': unicode(self.course.id), 'include_grades':True}
+        response = self.do_get(users_uri, query_parameters=params)
         self.assertEqual(response.status_code, 200)
         complete_count = len([user for user in response.data if user['complete_status']])
         self.assertEqual(complete_count, users_completed)
@@ -620,11 +624,12 @@ class OrganizationsApiTests(ModuleStoreTestCase, APIClientMixin):
         self.assertEqual(response.data['users_grade_average'], 0.838)
         self.assertEqual(response.data['users_grade_complete_count'], 4)
 
-    def test_organizations_metrics_get_courses_filter(self):
+    @ddt.data(ModuleStoreEnum.Type.split, ModuleStoreEnum.Type.mongo)
+    def test_organizations_metrics_get_courses_filter(self, store):
         users = []
-        course1 = CourseFactory.create(display_name="COURSE1", org="CRS1", run="RUN1")
-        course2 = CourseFactory.create(display_name="COURSE2", org="CRS2", run="RUN2")
-        course3 = CourseFactory.create(display_name="COURSE3", org="CRS3", run="RUN3")
+        course1 = CourseFactory.create(display_name="COURSE1", org="CRS1", run="RUN1", default_store=store)
+        course2 = CourseFactory.create(display_name="COURSE2", org="CRS2", run="RUN2", default_store=store)
+        course3 = CourseFactory.create(display_name="COURSE3", org="CRS3", run="RUN3", default_store=store)
 
         for i in xrange(1, 12):
             data = {
