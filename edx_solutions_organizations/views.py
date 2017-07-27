@@ -18,10 +18,12 @@ from edx_solutions_api_integration.courses.serializers import OrganizationCourse
 from edx_solutions_api_integration.users.serializers import SimpleUserSerializer
 from edx_solutions_api_integration.groups.serializers import GroupSerializer
 from edx_solutions_api_integration.permissions import SecureListAPIView, SecurePaginatedModelViewSet
-from edx_solutions_api_integration.utils import str2bool
+from edx_solutions_api_integration.utils import (
+    str2bool,
+    get_aggregate_exclusion_user_ids,
+)
 from gradebook.models import StudentGradebook
 from student.models import CourseEnrollment
-from student.roles import get_aggregate_exclusion_user_ids
 
 from .serializers import OrganizationSerializer, BasicOrganizationSerializer, OrganizationWithCourseCountSerializer
 from .models import Organization, OrganizationGroupUser
