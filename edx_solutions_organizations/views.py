@@ -271,6 +271,9 @@ class OrganizationsViewSet(SecurePaginatedModelViewSet):
                 setattr(course_descriptor, 'enrolled_users', enrolled_users)
                 response_data.append(course_descriptor)
 
+        if request.query_params.get('mobile_available'):
+            mobile_available = str2bool(request.query_params.get('mobile_available'))
+            response_data = [data for data in response_data if getattr(data, 'mobile_available') == mobile_available]
         serializer = OrganizationCourseSerializer(response_data, many=True, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
 
