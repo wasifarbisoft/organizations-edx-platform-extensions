@@ -419,6 +419,35 @@ class OrganizationsApiTests(ModuleStoreTestCase, APIClientMixin):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 0)
 
+    def test_organizations_courses_search_by_mobile_available(self):
+        organization = self.setup_test_organization()
+        courses = CourseFactory.create_batch(2)
+        mobile_course = CourseFactory.create(mobile_available=True)
+        courses.append(mobile_course)
+        users = UserFactory.create_batch(3)
+        for i, user in enumerate(users):
+            CourseEnrollmentFactory.create(user=user, course_id=courses[i].id)
+            user.organizations.add(organization['id'])
+
+        # fetch all courses for organization
+        courses_uri = '{}{}/courses/'.format(self.base_organizations_uri, organization['id'])
+        response = self.do_get(courses_uri)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 3)
+
+        # fetch mobile available courses for organization
+        response = self.do_get("{}?mobile_available=false".format(courses_uri))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 2)
+        self.assertEqual(response.data[0]['mobile_available'], False)
+        self.assertEqual(response.data[1]['mobile_available'], False)
+
+        # fetch mobile available courses for organization
+        response = self.do_get("{}?mobile_available=true".format(courses_uri))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]['mobile_available'], True)
+
     def test_organizations_courses_get_enrolled_users(self):
         organization = self.setup_test_organization()
         courses = CourseFactory.create_batch(2)
