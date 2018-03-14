@@ -7,6 +7,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Sum, F, Count
 from django.db import IntegrityError
 from django.utils.translation import ugettext as _
+from openedx.core.djangoapps.content.course_overviews.models import CourseOverview
 
 from rest_framework import status
 from rest_framework.decorators import detail_route, list_route
@@ -263,18 +264,13 @@ class OrganizationsViewSet(SecurePaginatedModelViewSet):
         for (course_id, user_id) in enrollment_qs:
             enrollments.setdefault(course_id, []).append(user_id)
 
-        response_data = []
-        for course_key in course_keys:
-            course_descriptor = get_course_descriptor(course_key, 0)
-            if course_descriptor is not None:
-                enrolled_users = enrollments.get(unicode(course_key), [])
-                setattr(course_descriptor, 'enrolled_users', enrolled_users)
-                response_data.append(course_descriptor)
-
         if request.query_params.get('mobile_available'):
             mobile_available = str2bool(request.query_params.get('mobile_available'))
-            response_data = [data for data in response_data if getattr(data, 'mobile_available') == mobile_available]
-        serializer = OrganizationCourseSerializer(response_data, many=True, context={'request': request})
+            courses = CourseOverview.objects.filter(id__in=course_keys, mobile_available=mobile_available)
+        else:
+            courses = CourseOverview.objects.filter(id__in=course_keys)
+
+        serializer = OrganizationCourseSerializer(courses, many=True, context={'request': request, 'enrollments': enrollments})
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
