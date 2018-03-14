@@ -19,6 +19,7 @@ from gradebook.models import StudentGradebook
 from .models import OrganizationGroupUser
 from student.models import UserProfile
 from student.tests.factories import CourseEnrollmentFactory, UserFactory, GroupFactory
+from openedx.core.djangoapps.content.course_overviews.models import CourseOverview
 from xmodule.modulestore.tests.factories import CourseFactory
 from edx_solutions_api_integration.test_utils import (
     APIClientMixin,
@@ -385,6 +386,9 @@ class OrganizationsApiTests(ModuleStoreTestCase, APIClientMixin):
         courses = CourseFactory.create_batch(2)
         users = UserFactory.create_batch(2)
 
+        for course in courses:
+            CourseOverview.get_from_id(course.id)
+
         for i, user in enumerate(users):
             user.organizations.add(organization['id'])
             CourseEnrollmentFactory.create(user=users[0], course_id=courses[i].id)
@@ -425,6 +429,10 @@ class OrganizationsApiTests(ModuleStoreTestCase, APIClientMixin):
         mobile_course = CourseFactory.create(mobile_available=True)
         courses.append(mobile_course)
         users = UserFactory.create_batch(3)
+
+        for course in courses:
+            CourseOverview.get_from_id(course.id)
+
         for i, user in enumerate(users):
             CourseEnrollmentFactory.create(user=user, course_id=courses[i].id)
             user.organizations.add(organization['id'])
@@ -452,6 +460,9 @@ class OrganizationsApiTests(ModuleStoreTestCase, APIClientMixin):
         organization = self.setup_test_organization()
         courses = CourseFactory.create_batch(2)
         users = UserFactory.create_batch(5)
+
+        for course in courses:
+            CourseOverview.get_from_id(course.id)
 
         for i, user in enumerate(users):
             CourseEnrollmentFactory.create(user=user, course_id=courses[i % 2].id)
