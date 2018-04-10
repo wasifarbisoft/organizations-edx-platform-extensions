@@ -252,18 +252,18 @@ class OrganizationsViewSet(SecurePaginatedModelViewSet):
         Returns list of courses in an organization
         """
         organization = self.get_object()
-        course_ids = User.objects.filter(organizations=organization)\
-            .values_list('courseenrollment__course_id', flat=True).distinct()
-
-        course_keys = map(get_course_key, filter(None, course_ids))
         enrollment_qs = CourseEnrollment.objects\
-            .filter(user__organizations=organization, is_active=True, course_id__in=course_keys)\
+            .filter(user__organizations=organization, is_active=True)\
             .values_list('course_id', 'user_id')
 
         enrollments = {}
+        course_ids = []
         for (course_id, user_id) in enrollment_qs:
             enrollments.setdefault(course_id, []).append(user_id)
+            if course_id not in course_ids:
+                course_ids.append(course_id)
 
+        course_keys = map(get_course_key, filter(None, course_ids))
         if request.query_params.get('mobile_available'):
             mobile_available = str2bool(request.query_params.get('mobile_available'))
             courses = CourseOverview.objects.filter(id__in=course_keys, mobile_available=mobile_available)
