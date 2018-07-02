@@ -21,6 +21,10 @@ class Organization(TimeStampedModel):
     logo_url = models.CharField(max_length=255, blank=True, null=True)
     users = models.ManyToManyField(User, related_name="organizations", blank=True)
     groups = models.ManyToManyField(Group, related_name="organizations", blank=True)
+    # attributes are client specific fields.These are optional fields
+    # could be different for each organization
+    attributes = models.CharField(max_length=512, null=True, blank=True)
+    include_manager_info = models.BooleanField(default=False)
 
 
 class OrganizationGroupUser(TimeStampedModel):
