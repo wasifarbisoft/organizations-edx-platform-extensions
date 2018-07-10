@@ -997,3 +997,90 @@ class OrganizationsAttributesApiTests(ModuleStoreTestCase, APIClientMixin):
 
         self.assertEqual(response.data['attributes'], expected_response)
 
+    def test_organizations_attributes_update(self):
+        organization = self.setup_test_organization()
+
+        test_uri = '{}{}/attributes'.format(self.base_organizations_uri, organization['id'])
+        data = {
+            'name': 'phone'
+        }
+        response = self.do_post(test_uri, data)
+        self.assertEqual(response.status_code, 201)
+
+        test_uri = '{}{}/attributes'.format(self.base_organizations_uri, organization['id'])
+        data = {
+            'name': 'address'
+        }
+        response = self.do_post(test_uri, data)
+        self.assertEqual(response.status_code, 201)
+
+        test_uri = '{}{}/attributes'.format(self.base_organizations_uri, organization['id'])
+        data = {
+            'name': 'cell',
+            'key': '2'
+        }
+        response = self.do_put(test_uri, data)
+        self.assertEqual(response.status_code, 200)
+
+        test_uri = '{}{}/attributes'.format(self.base_organizations_uri, organization['id'])
+        response = self.do_get(test_uri)
+        self.assertEqual(response.status_code, 200)
+
+        expected_response = {
+            '1': 'phone',
+            '2': 'cell'
+        }
+
+        self.assertEqual(response.data['attributes'], expected_response)
+
+    def test_organizations_attributes_update_with_existing_name(self):
+        organization = self.setup_test_organization()
+
+        test_uri = '{}{}/attributes'.format(self.base_organizations_uri, organization['id'])
+        data = {
+            'name': 'phone'
+        }
+        response = self.do_post(test_uri, data)
+        self.assertEqual(response.status_code, 201)
+
+        test_uri = '{}{}/attributes'.format(self.base_organizations_uri, organization['id'])
+        data = {
+            'name': 'address'
+        }
+        response = self.do_post(test_uri, data)
+        self.assertEqual(response.status_code, 201)
+
+        test_uri = '{}{}/attributes'.format(self.base_organizations_uri, organization['id'])
+        data = {
+            'name': 'phone',
+            'key': '2'
+        }
+        response = self.do_put(test_uri, data)
+        self.assertEqual(response.status_code, 409)
+
+    def test_organizations_attributes_update_with_non_existing_key(self):
+        organization = self.setup_test_organization()
+
+        test_uri = '{}{}/attributes'.format(self.base_organizations_uri, organization['id'])
+        data = {
+            'name': 'phone'
+        }
+        response = self.do_post(test_uri, data)
+        self.assertEqual(response.status_code, 201)
+
+        test_uri = '{}{}/attributes'.format(self.base_organizations_uri, organization['id'])
+        data = {
+            'name': 'address'
+        }
+        response = self.do_post(test_uri, data)
+        self.assertEqual(response.status_code, 201)
+
+        test_uri = '{}{}/attributes'.format(self.base_organizations_uri, organization['id'])
+        data = {
+            'name': 'mobile',
+            'key': '7'
+        }
+        response = self.do_put(test_uri, data)
+        self.assertEqual(response.status_code, 404)
+
+
