@@ -23,7 +23,7 @@ class Organization(TimeStampedModel):
     groups = models.ManyToManyField(Group, related_name="organizations", blank=True)
     # attributes are client specific fields.These are optional fields
     # could be different for each organization
-    attributes = models.CharField(max_length=512, null=True, blank=True)
+    attributes = models.CharField(max_length=512, default='{}')
     include_manager_info = models.BooleanField(default=False)
 
 

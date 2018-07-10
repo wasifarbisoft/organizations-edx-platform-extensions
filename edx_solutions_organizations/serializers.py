@@ -39,3 +39,18 @@ class OrganizationWithCourseCountSerializer(BasicOrganizationSerializer):
         model = Organization
         fields = ('url', 'id', 'name', 'display_name', 'number_of_courses', 'contact_name', 'contact_email',
                   'contact_phone', 'logo_url', 'created', 'modified', 'number_of_participants')
+
+
+class OrganizationAttributesSerializer(serializers.ModelSerializer):
+    """ Serializer for Organization Attributes interactions """
+
+    class Meta:
+        """ Serializer/field specification """
+        model = Organization
+        fields = ('attributes', 'id')
+
+    def to_representation(self, instance):
+        import json
+        data = super(OrganizationAttributesSerializer, self).to_representation(instance)
+        data['attributes'] = json.loads(instance.attributes)
+        return data

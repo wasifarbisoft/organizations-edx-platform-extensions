@@ -10,11 +10,13 @@ import ddt
 from urllib import urlencode
 
 from django.conf import settings
+from django.test.client import Client
 from django.contrib.auth.models import User
 from django.core.cache import cache
 from django.test.utils import override_settings
 from django.utils.translation import ugettext as _
 
+from edx_solutions_api_integration.utils import PERMISSION_GROUPS
 from gradebook.models import StudentGradebook
 from .models import OrganizationGroupUser
 from student.models import UserProfile
@@ -886,3 +888,112 @@ class OrganizationsApiTests(ModuleStoreTestCase, APIClientMixin):
         response = self.do_get(test_uri)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), len(users))
+
+
+@ddt.ddt
+class OrganizationsAttributesApiTests(ModuleStoreTestCase, APIClientMixin):
+    """ Test suite for Organization Attributes API views """
+
+    MODULESTORE = TEST_DATA_SPLIT_MODULESTORE
+
+    def setUp(self):
+        super(OrganizationsAttributesApiTests, self).setUp()
+        self.test_server_prefix = 'https://testserver'
+        self.base_organizations_uri = '/api/server/organizations/'
+        self.test_organization_name = str(uuid.uuid4())
+        self.test_organization_display_name = 'Test Org'
+        self.test_organization_contact_name = 'John Org'
+        self.test_organization_contact_email = 'john@test.org'
+        self.test_organization_contact_phone = '+1 332 232 24234'
+        self.test_organization_logo_url = 'org_logo.jpg'
+
+        self.course = CourseFactory.create()
+
+        self.client = Client()
+        self.user = UserFactory.create(username='test', email='test@edx.org', password='test_password')
+        self.user.groups.create(name=PERMISSION_GROUPS['MCKA_COURSE_OPS_ADMIN'])
+        self.client.login(username=self.user.username, password='test_password')
+
+        cache.clear()
+
+    def setup_test_organization(self, org_data=None):
+        """
+        Creates a new organization with given org_data
+        if org_data is not present it would create organization with test values
+        :param org_data: Dictionary witch each item represents organization attribute
+        :return: newly created organization
+        """
+        org_data = org_data if org_data else {}
+        data = {
+            'name': org_data.get('name', self.test_organization_name),
+            'display_name': org_data.get('display_name', self.test_organization_display_name),
+            'contact_name': org_data.get('contact_name', self.test_organization_contact_name),
+            'contact_email': org_data.get('contact_email', self.test_organization_contact_email),
+            'contact_phone': org_data.get('contact_phone', self.test_organization_contact_phone),
+            'logo_url': org_data.get('logo_url', self.test_organization_logo_url),
+            'users': org_data.get('users', []),
+            'groups': org_data.get('groups', [])
+        }
+        response = self.do_post(self.base_organizations_uri, data)
+        self.assertEqual(response.status_code, 201)
+        return response.data
+
+    def login_with_non_ops_admin(self):
+        self.client.logout()
+        user = UserFactory.create(username='test_non_ops', email='test_non_ops@edx.org', password='test_password')
+        self.client.login(username=user.username, password='test_password')
+
+    def test_organizations_attributes_add(self):
+        organization = self.setup_test_organization()
+
+        test_uri = '{}{}/attributes'.format(self.base_organizations_uri, organization['id'])
+        data = {
+            'name': 'phone'
+        }
+        response = self.do_post(test_uri, data)
+        self.assertEqual(response.status_code, 201)
+
+    def test_organizations_attributes_add_with_non_ops_admin(self):
+        self.login_with_non_ops_admin()
+        organization = self.setup_test_organization()
+
+        test_uri = '{}{}/attributes'.format(self.base_organizations_uri, organization['id'])
+        data = {
+            'name': 'phone'
+        }
+        response = self.do_post(test_uri, data)
+        self.assertEqual(response.status_code, 403)
+
+    def test_organizations_attributes_add_with_already_exists_field(self):
+        organization = self.setup_test_organization()
+
+        test_uri = '{}{}/attributes'.format(self.base_organizations_uri, organization['id'])
+        data = {
+            'name': 'phone'
+        }
+        response = self.do_post(test_uri, data)
+        self.assertEqual(response.status_code, 201)
+
+        response = self.do_post(test_uri, data)
+        self.assertEqual(response.status_code, 409)
+
+    def test_organizations_attributes_get(self):
+        organization = self.setup_test_organization()
+
+        test_uri = '{}{}/attributes'.format(self.base_organizations_uri, organization['id'])
+        data = {
+            'name': 'phone'
+        }
+        response = self.do_post(test_uri, data)
+        self.assertEqual(response.status_code, 201)
+
+        test_uri = '{}{}/attributes'.format(self.base_organizations_uri, organization['id'])
+        response = self.do_get(test_uri)
+        self.assertEqual(response.status_code, 200)
+
+        expected_response = {
+            '1': 'phone'
+        }
+
+        self.assertEqual(response.data['attributes'], expected_response)
+
