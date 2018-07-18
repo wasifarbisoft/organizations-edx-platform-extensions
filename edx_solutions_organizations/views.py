@@ -1,6 +1,7 @@
 # pylint: disable=C0103
 
 """ ORGANIZATIONS API VIEWS """
+import json
 from django.conf import settings
 from django.contrib.auth.models import User, Group
 from django.core.exceptions import ObjectDoesNotExist
@@ -15,10 +16,15 @@ from rest_framework.response import Response
 from rest_framework.exceptions import ParseError
 
 from edx_solutions_api_integration.courseware_access import get_course_key, get_course_descriptor
+from edx_solutions_api_integration.permissions import IsOpsAdminOrReadOnlyView
 from edx_solutions_api_integration.courses.serializers import OrganizationCourseSerializer
 from edx_solutions_api_integration.users.serializers import SimpleUserSerializer
 from edx_solutions_api_integration.groups.serializers import GroupSerializer
-from edx_solutions_api_integration.permissions import SecureListAPIView, SecurePaginatedModelViewSet
+from edx_solutions_api_integration.permissions import (
+    MobileAPIView,
+    SecureListAPIView,
+    SecurePaginatedModelViewSet,
+)
 from edx_solutions_api_integration.utils import (
     str2bool,
     get_aggregate_exclusion_user_ids,
@@ -26,6 +32,8 @@ from edx_solutions_api_integration.utils import (
 from gradebook.models import StudentGradebook
 from student.models import CourseEnrollment
 
+from edx_solutions_organizations.serializers import OrganizationAttributesSerializer
+from edx_solutions_organizations.utils import generate_key_for_field, is_field_exists
 from .serializers import OrganizationSerializer, BasicOrganizationSerializer, OrganizationWithCourseCountSerializer
 from .models import Organization, OrganizationGroupUser
 
@@ -386,3 +394,82 @@ class OrganizationsGroupsUsersList(SecureListAPIView):
             }, status=status.HTTP_200_OK)
         else:
             return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class OrganizationAttributesView(MobileAPIView):
+    """
+    **Use Case**
+
+        Attributes of organization.
+
+    **Example Requests**
+
+        GET /api/organizations/{organization_id}/attributes
+        POST /api/organizations/{organization_id}/attributes
+
+        **POST Parameters**
+
+        The body of the POST request must include the following parameters.
+
+        * attribute: organizational field,
+
+        "attribute": {
+            "key": "Key",
+            "name": "Sample Name"
+        }
+
+    **Response Values**
+
+        **GET**
+
+        If the request is successful, the request returns an HTTP 200 "OK" response.
+
+        * id: organization id
+        * attribute: organizational field
+
+        **POST**
+
+        If the request is successful, the request returns an HTTP 201 "CREATED" response.
+    """
+
+    def __init__(self):
+        self.permission_classes += (IsOpsAdminOrReadOnlyView,)
+
+    def get(self, request, organization_id):
+        """
+        GET /api/organizations/{organization_id}/attributes
+        """
+        try:
+            organization = Organization.objects.get(id=organization_id)
+        except ObjectDoesNotExist:
+            return Response({
+                "detail": 'Organization with {}, does not exists.'.format(organization_id)
+            }, status.HTTP_404_NOT_FOUND)
+
+        serializer = OrganizationAttributesSerializer(organization)
+        return Response(serializer.data, status.HTTP_200_OK)
+
+    def post(self, request, organization_id):
+        """
+        POST /api/organizations/{organization_id}/attributes
+        """
+        name = request.data.get('name')
+
+        try:
+            organization = Organization.objects.get(id=organization_id)
+        except ObjectDoesNotExist:
+            return Response({
+                "detail": 'Organization with {}, does not exists.'.format(organization_id)
+            }, status.HTTP_404_NOT_FOUND)
+
+        attributes = json.loads(organization.attributes)
+        if is_field_exists(name, attributes):
+            return Response({
+                "detail": 'Name {} already exists.'.format(name)
+            }, status.HTTP_409_CONFLICT)
+
+        attributes[generate_key_for_field(attributes)] = name
+        organization.attributes = json.dumps(attributes)
+        organization.save()
+
+        return Response({}, status=status.HTTP_201_CREATED)
