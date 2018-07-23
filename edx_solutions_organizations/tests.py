@@ -1083,4 +1083,62 @@ class OrganizationsAttributesApiTests(ModuleStoreTestCase, APIClientMixin):
         response = self.do_put(test_uri, data)
         self.assertEqual(response.status_code, 404)
 
+    def test_organizations_attributes_delete_with_key(self):
+        organization = self.setup_test_organization()
+
+        test_uri = '{}{}/attributes'.format(self.base_organizations_uri, organization['id'])
+        data = {
+            'name': 'phone'
+        }
+        response = self.do_post(test_uri, data)
+        self.assertEqual(response.status_code, 201)
+
+        test_uri = '{}{}/attributes'.format(self.base_organizations_uri, organization['id'])
+        data = {
+            'name': 'address'
+        }
+        response = self.do_post(test_uri, data)
+        self.assertEqual(response.status_code, 201)
+
+        test_uri = '{}{}/attributes'.format(self.base_organizations_uri, organization['id'])
+        data = {
+            'key': '2'
+        }
+        response = self.do_delete(test_uri, data)
+        self.assertEqual(response.status_code, 200)
+
+        test_uri = '{}{}/attributes'.format(self.base_organizations_uri, organization['id'])
+        response = self.do_get(test_uri)
+        self.assertEqual(response.status_code, 200)
+
+        expected_response = {
+            '1': 'phone'
+        }
+
+        self.assertEqual(response.data['attributes'], expected_response)
+
+    def test_organizations_attributes_delete_with_non_existing_key(self):
+        organization = self.setup_test_organization()
+
+        test_uri = '{}{}/attributes'.format(self.base_organizations_uri, organization['id'])
+        data = {
+            'name': 'phone'
+        }
+        response = self.do_post(test_uri, data)
+        self.assertEqual(response.status_code, 201)
+
+        test_uri = '{}{}/attributes'.format(self.base_organizations_uri, organization['id'])
+        data = {
+            'name': 'address'
+        }
+        response = self.do_post(test_uri, data)
+        self.assertEqual(response.status_code, 201)
+
+        test_uri = '{}{}/attributes'.format(self.base_organizations_uri, organization['id'])
+        data = {
+            'key': '999'
+        }
+        response = self.do_delete(test_uri, data)
+        self.assertEqual(response.status_code, 404)
+
 
