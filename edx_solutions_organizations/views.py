@@ -33,7 +33,7 @@ from gradebook.models import StudentGradebook
 from student.models import CourseEnrollment
 
 from edx_solutions_organizations.serializers import OrganizationAttributesSerializer
-from edx_solutions_organizations.utils import generate_key_for_field, is_field_exists
+from edx_solutions_organizations.utils import generate_key_for_field, is_field_exists, is_key_exists
 from .serializers import OrganizationSerializer, BasicOrganizationSerializer, OrganizationWithCourseCountSerializer
 from .models import Organization, OrganizationGroupUser
 
@@ -473,3 +473,35 @@ class OrganizationAttributesView(MobileAPIView):
         organization.save()
 
         return Response({}, status=status.HTTP_201_CREATED)
+
+    def put(self, request, organization_id):
+        """
+        PUT /api/organizations/{organization_id}/attributes
+        """
+        name = request.data.get('name')
+        key = request.data.get('key')
+
+        try:
+            organization = Organization.objects.get(id=organization_id)
+        except ObjectDoesNotExist:
+            return Response({
+                "detail": 'Organization with {}, does not exists.'.format(organization_id)
+            }, status.HTTP_404_NOT_FOUND)
+
+        attributes = json.loads(organization.attributes)
+
+        if not is_key_exists(key, attributes):
+            return Response({
+                "detail": 'Key {} does not exists.'.format(key)
+            }, status.HTTP_404_NOT_FOUND)
+
+        if is_field_exists(name, attributes):
+            return Response({
+                "detail": 'Name {} already exists.'.format(name)
+            }, status.HTTP_409_CONFLICT)
+
+        attributes[key] = name
+        organization.attributes = json.dumps(attributes)
+        organization.save()
+
+        return Response({}, status=status.HTTP_200_OK)

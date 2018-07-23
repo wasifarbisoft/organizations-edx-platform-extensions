@@ -19,3 +19,13 @@ def is_field_exists(name, data):
     :return: boolean value
     """
     return name in [value for key, value in data.items()]
+
+
+def is_key_exists(key, data):
+    """
+    Method used to check whether key exists for the attribute of organizations
+    :param key: key of the attribute
+    :param data: existing attributes with keys
+    :return: boolean value
+    """
+    return key in data.keys()
