@@ -505,3 +505,30 @@ class OrganizationAttributesView(MobileAPIView):
         organization.save()
 
         return Response({}, status=status.HTTP_200_OK)
+
+    def delete(self, request, organization_id):
+        """
+        DELETE /api/organizations/{organization_id}/attributes
+        """
+        key = request.data.get('key')
+
+        try:
+            organization = Organization.objects.get(id=organization_id)
+        except ObjectDoesNotExist:
+            return Response({
+                "detail": 'Organization with {}, does not exists.'.format(organization_id)
+            }, status.HTTP_404_NOT_FOUND)
+
+        attributes = json.loads(organization.attributes)
+
+        if not is_key_exists(key, attributes):
+            return Response({
+                "detail": 'Key {} does not exists.'.format(key)
+            }, status.HTTP_404_NOT_FOUND)
+
+        del attributes[key]
+        organization.attributes = json.dumps(attributes)
+        organization.save()
+
+        return Response({}, status=status.HTTP_200_OK)
+
