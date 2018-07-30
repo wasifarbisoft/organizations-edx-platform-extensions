@@ -9,6 +9,7 @@ from django.db.models import Sum, F, Count
 from django.db import IntegrityError
 from django.utils.translation import ugettext as _
 from openedx.core.djangoapps.content.course_overviews.models import CourseOverview
+from openedx.core.djangoapps.user_api.models import UserPreference
 
 from rest_framework import status
 from rest_framework.decorators import detail_route, list_route
@@ -500,9 +501,12 @@ class OrganizationAttributesView(MobileAPIView):
                 "detail": 'Name {} already exists.'.format(name)
             }, status.HTTP_409_CONFLICT)
 
+        previous_name = attributes[key]
         attributes[key] = name
         organization.attributes = json.dumps(attributes)
         organization.save()
+
+        UserPreference.objects.filter(key=previous_name).update(key=attributes[key])
 
         return Response({}, status=status.HTTP_200_OK)
 
@@ -526,8 +530,11 @@ class OrganizationAttributesView(MobileAPIView):
                 "detail": 'Key {} does not exists.'.format(key)
             }, status.HTTP_404_NOT_FOUND)
 
+        deleted_name = attributes[key]
         del attributes[key]
         organization.attributes = json.dumps(attributes)
         organization.save()
+
+        UserPreference.objects.filter(key=deleted_name).delete()
 
         return Response({}, status=status.HTTP_200_OK)
