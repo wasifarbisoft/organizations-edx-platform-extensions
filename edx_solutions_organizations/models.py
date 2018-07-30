@@ -1,6 +1,7 @@
 """
 Django database models supporting the organizations app
 """
+import json
 from django.contrib.auth.models import Group, User
 from django.db import models
 
@@ -25,6 +26,10 @@ class Organization(TimeStampedModel):
     # could be different for each organization
     attributes = models.CharField(max_length=512, default='{}')
     include_manager_info = models.BooleanField(default=False)
+
+    def is_attribute_exists(self, name):
+        attributes = json.loads(self.attributes)
+        return name in attributes.values()
 
 
 class OrganizationGroupUser(TimeStampedModel):
