@@ -4,6 +4,7 @@ Django database models supporting the organizations app
 import json
 from django.contrib.auth.models import Group, User
 from django.db import models
+from django.core.validators import RegexValidator
 
 from model_utils.models import TimeStampedModel
 from edx_solutions_projects.models import Workgroup
@@ -46,3 +47,34 @@ class OrganizationGroupUser(TimeStampedModel):
         Meta class for setting model meta options
         """
         unique_together = ("organization", "group", "user")
+
+
+class OrganizationUsersAttributes(models.Model):
+    """Organization Users Attributes, used to store organization specific data"""
+    KEY_REGEX = r"[-_a-zA-Z0-9]+"
+    user = models.ForeignKey(User, related_name="user_attributes")
+    organization = models.ForeignKey(Organization, related_name="user_attributes")
+    key = models.CharField(max_length=255, db_index=True, validators=[RegexValidator(KEY_REGEX)])
+    value = models.TextField()
+
+    class Meta(object):
+        unique_together = ("user", "key")
+
+    @staticmethod
+    def get_all_attributes(user):
+        """
+        Gets all attributes for a given user
+
+        Returns: Set of (attributes type, value) pairs for each of the user's organizational attributes
+        """
+        return dict([(pref.key, pref.value) for pref in user.attributes.all()])
+
+    @classmethod
+    def get_value(cls, user, attribute_key, default=None):
+        """Gets the user attributes value for a given key.
+        """
+        try:
+            attribute = cls.objects.get(user=user, key=attribute_key)
+            return attribute.value
+        except cls.DoesNotExist:
+            return default

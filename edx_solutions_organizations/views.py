@@ -33,6 +33,7 @@ from edx_solutions_api_integration.utils import (
 from gradebook.models import StudentGradebook
 from student.models import CourseEnrollment
 
+from edx_solutions_organizations.models import OrganizationUsersAttributes
 from edx_solutions_organizations.serializers import OrganizationAttributesSerializer
 from edx_solutions_organizations.utils import generate_key_for_field, is_field_exists, is_key_exists
 from .serializers import OrganizationSerializer, BasicOrganizationSerializer, OrganizationWithCourseCountSerializer
@@ -506,7 +507,7 @@ class OrganizationAttributesView(MobileAPIView):
         organization.attributes = json.dumps(attributes)
         organization.save()
 
-        UserPreference.objects.filter(key=previous_name).update(key=attributes[key])
+        OrganizationUsersAttributes.objects.filter(key=previous_name).update(key=attributes[key])
 
         return Response({}, status=status.HTTP_200_OK)
 
@@ -535,6 +536,6 @@ class OrganizationAttributesView(MobileAPIView):
         organization.attributes = json.dumps(attributes)
         organization.save()
 
-        UserPreference.objects.filter(key=deleted_name).delete()
+        OrganizationUsersAttributes.objects.filter(key=deleted_name).delete()
 
         return Response({}, status=status.HTTP_200_OK)
