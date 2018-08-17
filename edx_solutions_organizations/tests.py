@@ -992,7 +992,11 @@ class OrganizationsAttributesApiTests(ModuleStoreTestCase, APIClientMixin):
         self.assertEqual(response.status_code, 200)
 
         expected_response = {
-            '1': 'phone'
+            'phone': {
+                'order': 1,
+                'label': 'phone',
+                'is_active': True
+            }
         }
 
         self.assertEqual(response.data['attributes'], expected_response)
@@ -1017,7 +1021,7 @@ class OrganizationsAttributesApiTests(ModuleStoreTestCase, APIClientMixin):
         test_uri = '{}{}/attributes'.format(self.base_organizations_uri, organization['id'])
         data = {
             'name': 'cell',
-            'key': '2'
+            'key': 'phone'
         }
         response = self.do_put(test_uri, data)
         self.assertEqual(response.status_code, 200)
@@ -1027,8 +1031,16 @@ class OrganizationsAttributesApiTests(ModuleStoreTestCase, APIClientMixin):
         self.assertEqual(response.status_code, 200)
 
         expected_response = {
-            '1': 'phone',
-            '2': 'cell'
+            'phone': {
+                'order': 1,
+                'label': 'cell',
+                'is_active': True
+            },
+            'address': {
+                'order': 2,
+                'label': 'address',
+                'is_active': True
+            }
         }
 
         self.assertEqual(response.data['attributes'], expected_response)
@@ -1053,7 +1065,7 @@ class OrganizationsAttributesApiTests(ModuleStoreTestCase, APIClientMixin):
         test_uri = '{}{}/attributes'.format(self.base_organizations_uri, organization['id'])
         data = {
             'name': 'phone',
-            'key': '2'
+            'key': 'address'
         }
         response = self.do_put(test_uri, data)
         self.assertEqual(response.status_code, 409)
@@ -1078,7 +1090,7 @@ class OrganizationsAttributesApiTests(ModuleStoreTestCase, APIClientMixin):
         test_uri = '{}{}/attributes'.format(self.base_organizations_uri, organization['id'])
         data = {
             'name': 'mobile',
-            'key': '7'
+            'key': 'mobile'
         }
         response = self.do_put(test_uri, data)
         self.assertEqual(response.status_code, 404)
@@ -1102,7 +1114,7 @@ class OrganizationsAttributesApiTests(ModuleStoreTestCase, APIClientMixin):
 
         test_uri = '{}{}/attributes'.format(self.base_organizations_uri, organization['id'])
         data = {
-            'key': '2'
+            'key': 'address'
         }
         response = self.do_delete(test_uri, data)
         self.assertEqual(response.status_code, 200)
@@ -1112,7 +1124,11 @@ class OrganizationsAttributesApiTests(ModuleStoreTestCase, APIClientMixin):
         self.assertEqual(response.status_code, 200)
 
         expected_response = {
-            '1': 'phone'
+            'phone': {
+                'order': 1,
+                'label': 'phone',
+                'is_active': True
+            }
         }
 
         self.assertEqual(response.data['attributes'], expected_response)
@@ -1136,7 +1152,7 @@ class OrganizationsAttributesApiTests(ModuleStoreTestCase, APIClientMixin):
 
         test_uri = '{}{}/attributes'.format(self.base_organizations_uri, organization['id'])
         data = {
-            'key': '999'
+            'key': 'mobile'
         }
         response = self.do_delete(test_uri, data)
         self.assertEqual(response.status_code, 404)

@@ -1,6 +1,6 @@
 """ Django REST Framework Serializers """
-from rest_framework import serializers
 
+from rest_framework import serializers
 from .models import Organization
 
 
@@ -50,7 +50,6 @@ class OrganizationAttributesSerializer(serializers.ModelSerializer):
         fields = ('attributes', 'id')
 
     def to_representation(self, instance):
-        import json
         data = super(OrganizationAttributesSerializer, self).to_representation(instance)
-        data['attributes'] = json.loads(instance.attributes)
+        data['attributes'] = instance.get_all_attributes()
         return data
