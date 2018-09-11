@@ -991,15 +991,15 @@ class OrganizationsAttributesApiTests(ModuleStoreTestCase, APIClientMixin):
         response = self.do_get(test_uri)
         self.assertEqual(response.status_code, 200)
 
-        expected_response = {
-            'phone': {
+        expected_response = [
+            {
                 'order': 1,
                 'label': 'phone',
-                'is_active': True
+                'key': 'phone',
             }
-        }
+        ]
 
-        self.assertEqual(response.data['attributes'], expected_response)
+        self.assertEqual(response.data, expected_response)
 
     def test_organizations_attributes_update(self):
         organization = self.setup_test_organization()
@@ -1030,20 +1030,20 @@ class OrganizationsAttributesApiTests(ModuleStoreTestCase, APIClientMixin):
         response = self.do_get(test_uri)
         self.assertEqual(response.status_code, 200)
 
-        expected_response = {
-            'phone': {
+        expected_response = [
+            {
                 'order': 1,
                 'label': 'cell',
-                'is_active': True
+                'key': 'phone',
             },
-            'address': {
+            {
                 'order': 2,
                 'label': 'address',
-                'is_active': True
+                'key': 'address',
             }
-        }
+        ]
 
-        self.assertEqual(response.data['attributes'], expected_response)
+        self.assertEqual(response.data, expected_response)
 
     def test_organizations_attributes_update_with_existing_name(self):
         organization = self.setup_test_organization()
@@ -1123,15 +1123,15 @@ class OrganizationsAttributesApiTests(ModuleStoreTestCase, APIClientMixin):
         response = self.do_get(test_uri)
         self.assertEqual(response.status_code, 200)
 
-        expected_response = {
-            'phone': {
-                'order': 1,
-                'label': 'phone',
-                'is_active': True
+        expected_response = [
+            {
+                "order": 1,
+                "key": "phone",
+                "label": "phone"
             }
-        }
+        ]
 
-        self.assertEqual(response.data['attributes'], expected_response)
+        self.assertEqual(response.data, expected_response)
 
     def test_organizations_attributes_delete_with_non_existing_key(self):
         organization = self.setup_test_organization()

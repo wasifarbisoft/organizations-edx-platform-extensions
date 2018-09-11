@@ -448,8 +448,7 @@ class OrganizationAttributesView(MobileAPIView):
                 "detail": 'Organization with {}, does not exists.'.format(organization_id)
             }, status.HTTP_404_NOT_FOUND)
 
-        serializer = OrganizationAttributesSerializer(organization)
-        return Response(serializer.data, status.HTTP_200_OK)
+        return Response(organization.get_all_attributes(), status.HTTP_200_OK)
 
     def post(self, request, organization_id):
         """

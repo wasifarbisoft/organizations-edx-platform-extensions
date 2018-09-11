@@ -50,6 +50,4 @@ class OrganizationAttributesSerializer(serializers.ModelSerializer):
         fields = ('attributes', 'id')
 
     def to_representation(self, instance):
-        data = super(OrganizationAttributesSerializer, self).to_representation(instance)
-        data['attributes'] = instance.get_all_attributes()
-        return data
+        return instance.get_all_attributes()

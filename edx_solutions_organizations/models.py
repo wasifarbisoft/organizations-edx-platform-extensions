@@ -51,6 +51,7 @@ class Organization(TimeStampedModel):
                     {
                         'key': key,
                         'label': value['label'],
+                        'order': value['order']
                     } for key, value in attributes.items() if value['is_active'] == True
                 ]
 
