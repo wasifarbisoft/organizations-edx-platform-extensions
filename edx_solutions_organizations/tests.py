@@ -16,7 +16,6 @@ from django.core.cache import cache
 from django.test.utils import override_settings
 from django.utils.translation import ugettext as _
 
-from edx_solutions_api_integration.utils import PERMISSION_GROUPS
 from gradebook.models import StudentGradebook
 from .models import OrganizationGroupUser
 from student.models import UserProfile
@@ -911,7 +910,6 @@ class OrganizationsAttributesApiTests(ModuleStoreTestCase, APIClientMixin):
 
         self.client = Client()
         self.user = UserFactory.create(username='test', email='test@edx.org', password='test_password')
-        self.user.groups.create(name=PERMISSION_GROUPS['MCKA_COURSE_OPS_ADMIN'])
         self.client.login(username=self.user.username, password='test_password')
 
         cache.clear()
@@ -938,11 +936,6 @@ class OrganizationsAttributesApiTests(ModuleStoreTestCase, APIClientMixin):
         self.assertEqual(response.status_code, 201)
         return response.data
 
-    def login_with_non_ops_admin(self):
-        self.client.logout()
-        user = UserFactory.create(username='test_non_ops', email='test_non_ops@edx.org', password='test_password')
-        self.client.login(username=user.username, password='test_password')
-
     def test_organizations_attributes_add(self):
         organization = self.setup_test_organization()
 
@@ -952,17 +945,6 @@ class OrganizationsAttributesApiTests(ModuleStoreTestCase, APIClientMixin):
         }
         response = self.do_post(test_uri, data)
         self.assertEqual(response.status_code, 201)
-
-    def test_organizations_attributes_add_with_non_ops_admin(self):
-        self.login_with_non_ops_admin()
-        organization = self.setup_test_organization()
-
-        test_uri = '{}{}/attributes'.format(self.base_organizations_uri, organization['id'])
-        data = {
-            'name': 'phone'
-        }
-        response = self.do_post(test_uri, data)
-        self.assertEqual(response.status_code, 403)
 
     def test_organizations_attributes_add_with_already_exists_field(self):
         organization = self.setup_test_organization()

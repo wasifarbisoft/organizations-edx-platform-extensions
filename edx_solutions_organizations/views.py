@@ -17,7 +17,6 @@ from rest_framework.response import Response
 from rest_framework.exceptions import ParseError
 
 from edx_solutions_api_integration.courseware_access import get_course_key, get_course_descriptor
-from edx_solutions_api_integration.permissions import IsOpsAdminOrReadOnlyView
 from edx_solutions_api_integration.courses.serializers import OrganizationCourseSerializer
 from edx_solutions_api_integration.users.serializers import SimpleUserSerializer
 from edx_solutions_api_integration.groups.serializers import GroupSerializer
@@ -433,9 +432,6 @@ class OrganizationAttributesView(MobileAPIView):
 
         If the request is successful, the request returns an HTTP 201 "CREATED" response.
     """
-
-    def __init__(self):
-        self.permission_classes += (IsOpsAdminOrReadOnlyView,)
 
     def get(self, request, organization_id):
         """
