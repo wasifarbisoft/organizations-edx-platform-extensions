@@ -5,7 +5,7 @@ import json
 from django.conf import settings
 from django.contrib.auth.models import User, Group
 from django.core.exceptions import ObjectDoesNotExist
-from django.db.models import Sum, F, Count
+from django.db.models import Sum, F, Count, Prefetch
 from django.db import IntegrityError
 from django.utils.translation import ugettext as _
 from openedx.core.djangoapps.content.course_overviews.models import CourseOverview
@@ -146,8 +146,11 @@ class OrganizationsViewSet(SecurePaginatedModelViewSet):
             if course_key:
                 users = users.filter(courseenrollment__course_id__exact=course_key,
                                      courseenrollment__is_active=True)
-            if str2bool(include_grades):
-                users = users.prefetch_related('studentgradebook_set')
+
+                if str2bool(include_grades):
+                    users = users.prefetch_related(
+                        Prefetch('studentgradebook_set', queryset=StudentGradebook.objects.filter(course_id=course_key))
+                    )
 
             if str2bool(include_course_counts):
                 enrollments = CourseEnrollment.objects.filter(user__in=users).values('user').order_by().annotate(total=Count('user'))
@@ -171,7 +174,7 @@ class OrganizationsViewSet(SecurePaginatedModelViewSet):
 
                     if str2bool(include_grades) and course_key:
                         user_grades = {'grade': 0, 'proforma_grade': 0, 'complete_status': False}
-                        gradebook = user.studentgradebook_set.filter(course_id=course_key)
+                        gradebook = user.studentgradebook_set.all()
                         if gradebook:
                             user_grades['grade'] = gradebook[0].grade
                             user_grades['proforma_grade'] = gradebook[0].proforma_grade
@@ -195,9 +198,8 @@ class OrganizationsViewSet(SecurePaginatedModelViewSet):
             organization = self.get_object()
             users_to_be_deleted = organization.users.filter(id__in=user_ids)
             total_users = len(users_to_be_deleted)
-            for user in users_to_be_deleted:
-                organization.users.remove(user)
             if total_users > 0:
+                organization.users.remove(*users_to_be_deleted)
                 return Response({
                     "detail": _("{users_removed} user(s) removed from organization").format(users_removed=total_users)
                 }, status=status.HTTP_200_OK)
