@@ -34,7 +34,8 @@ from student.models import CourseEnrollment
 
 from edx_solutions_organizations.models import OrganizationUsersAttributes
 from edx_solutions_organizations.serializers import OrganizationAttributesSerializer
-from edx_solutions_organizations.utils import generate_key_for_field, is_key_exists, is_label_exists
+from edx_solutions_organizations.utils import generate_key_for_field, is_key_exists, is_label_exists, \
+    generate_random_key_for_field
 from .serializers import OrganizationSerializer, BasicOrganizationSerializer, OrganizationWithCourseCountSerializer
 from .models import Organization, OrganizationGroupUser
 
@@ -462,12 +463,13 @@ class OrganizationAttributesView(MobileAPIView):
             }, status.HTTP_404_NOT_FOUND)
 
         attributes = json.loads(organization.attributes)
-        if is_label_exists(name, attributes):
+        if organization.is_attribute_exists(name):
             return Response({
                 "detail": 'Name {} already exists.'.format(name)
             }, status.HTTP_409_CONFLICT)
-
-        attributes[name] = {'label': name, 'order': generate_key_for_field(attributes), 'is_active': True}
+        order = generate_key_for_field(attributes)
+        key = generate_random_key_for_field(name, order)
+        attributes[key] = {'label': name, 'order': order, 'is_active': True}
         organization.attributes = json.dumps(attributes)
         organization.save()
 
@@ -489,7 +491,7 @@ class OrganizationAttributesView(MobileAPIView):
 
         attributes = json.loads(organization.attributes)
 
-        if not is_key_exists(key, attributes):
+        if not organization.is_key_exists(key):
             return Response({
                 "detail": 'Key {} does not exists.'.format(key)
             }, status.HTTP_404_NOT_FOUND)
@@ -520,7 +522,7 @@ class OrganizationAttributesView(MobileAPIView):
 
         attributes = json.loads(organization.attributes)
 
-        if not is_key_exists(key, attributes):
+        if not organization.is_key_exists(key):
             return Response({
                 "detail": 'Key {} does not exists.'.format(key)
             }, status.HTTP_404_NOT_FOUND)

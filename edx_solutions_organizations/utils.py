@@ -11,6 +11,16 @@ def generate_key_for_field(data):
     return max(keys) + 1 if keys else 1
 
 
+def generate_random_key_for_field(name, order):
+    """
+    Method used to generate random key for the attribute of organizations
+    :param name: name of the attribute
+    :param order: order of the attribute
+    :return: next key to be placed against attribute
+    """
+    return "%s_%s" % (name.lower(), order)
+
+
 def is_label_exists(name, data):
     """
     Method used to check whether label exists for the attribute of organizations

@@ -977,7 +977,7 @@ class OrganizationsAttributesApiTests(ModuleStoreTestCase, APIClientMixin):
             {
                 'order': 1,
                 'label': 'phone',
-                'key': 'phone',
+                'key': 'phone_1',
             }
         ]
 
@@ -1003,7 +1003,7 @@ class OrganizationsAttributesApiTests(ModuleStoreTestCase, APIClientMixin):
         test_uri = '{}{}/attributes'.format(self.base_organizations_uri, organization['id'])
         data = {
             'name': 'cell',
-            'key': 'phone'
+            'key': 'phone_1'
         }
         response = self.do_put(test_uri, data)
         self.assertEqual(response.status_code, 200)
@@ -1014,15 +1014,16 @@ class OrganizationsAttributesApiTests(ModuleStoreTestCase, APIClientMixin):
 
         expected_response = [
             {
-                'order': 1,
-                'label': 'cell',
-                'key': 'phone',
-            },
-            {
                 'order': 2,
                 'label': 'address',
-                'key': 'address',
+                'key': 'address_2',
+            },
+            {
+                'order': 1,
+                'label': 'cell',
+                'key': 'phone_1',
             }
+
         ]
 
         self.assertEqual(response.data, expected_response)
@@ -1047,7 +1048,7 @@ class OrganizationsAttributesApiTests(ModuleStoreTestCase, APIClientMixin):
         test_uri = '{}{}/attributes'.format(self.base_organizations_uri, organization['id'])
         data = {
             'name': 'phone',
-            'key': 'address'
+            'key': 'address_2'
         }
         response = self.do_put(test_uri, data)
         self.assertEqual(response.status_code, 409)
@@ -1096,7 +1097,7 @@ class OrganizationsAttributesApiTests(ModuleStoreTestCase, APIClientMixin):
 
         test_uri = '{}{}/attributes'.format(self.base_organizations_uri, organization['id'])
         data = {
-            'key': 'address'
+            'key': 'address_2'
         }
         response = self.do_delete(test_uri, data)
         self.assertEqual(response.status_code, 200)
@@ -1108,7 +1109,7 @@ class OrganizationsAttributesApiTests(ModuleStoreTestCase, APIClientMixin):
         expected_response = [
             {
                 "order": 1,
-                "key": "phone",
+                "key": "phone_1",
                 "label": "phone"
             }
         ]
