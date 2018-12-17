@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='organizations-edx-platform-extensions',
-    version='1.2.6',
+    version='1.2.7',
     description='Organization management extension for edX platform',
     long_description=open('README.rst').read(),
     author='edX',
