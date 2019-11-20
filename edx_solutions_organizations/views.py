@@ -51,6 +51,11 @@ class OrganizationsViewSet(SecurePaginatedModelViewSet):
         self.serializer_class = OrganizationWithCourseCountSerializer
         queryset = self.get_queryset()
 
+        ids = request.query_params.get('ids', None)
+        if ids:
+            ids = [int(id) for id in ids.split(',')]
+            queryset = queryset.filter(id__in=ids)
+
         display_name = request.query_params.get('display_name', None)
         if display_name is not None:
             queryset = queryset.filter(display_name=display_name)
