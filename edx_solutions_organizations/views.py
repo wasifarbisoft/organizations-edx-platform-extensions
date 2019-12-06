@@ -30,7 +30,13 @@ from edx_solutions_api_integration.utils import (
     get_aggregate_exclusion_user_ids,
 )
 from gradebook.models import StudentGradebook
-from student.models import CourseEnrollment
+from student.models import CourseEnrollment, CourseAccessRole
+from student.roles import (
+    CourseAssistantRole,
+    CourseInstructorRole,
+    CourseObserverRole,
+    CourseStaffRole,
+)
 
 from edx_solutions_organizations.models import OrganizationUsersAttributes
 from edx_solutions_organizations.serializers import OrganizationAttributesSerializer
@@ -268,10 +274,24 @@ class OrganizationsViewSet(SecurePaginatedModelViewSet):
         """
         Returns list of courses in an organization
         """
+        exclude_admins = str2bool(request.query_params.get('exclude_admins'))
         organization = self.get_object()
+        organization_course_ids = []
+        roles_to_exclude = []
+        if exclude_admins:
+            organization_course_ids = CourseEnrollment.objects\
+                .filter(user__organizations=organization, is_active=True)\
+                .order_by('course_id').distinct().values_list('course_id', flat=True)
+            organization_course_ids = map(get_course_key, filter(None, organization_course_ids))
+            roles_to_exclude = [CourseInstructorRole.ROLE, CourseStaffRole.ROLE, CourseObserverRole.ROLE, CourseAssistantRole.ROLE]
+
         enrollment_qs = CourseEnrollment.objects\
             .filter(user__organizations=organization, is_active=True)\
-            .values_list('course_id', 'user_id')
+            .exclude(
+                user_id__in=CourseAccessRole.objects.filter(
+                    course_id__in=organization_course_ids, role__in=roles_to_exclude
+                ).values_list('user_id', flat=True)
+            ).values_list('course_id', 'user_id')
 
         enrollments = {}
         course_ids = []

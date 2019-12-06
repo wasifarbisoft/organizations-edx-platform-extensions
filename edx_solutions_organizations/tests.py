@@ -19,7 +19,8 @@ from django.utils.translation import ugettext as _
 from gradebook.models import StudentGradebook
 from .models import OrganizationGroupUser
 from student.models import UserProfile
-from student.tests.factories import CourseEnrollmentFactory, UserFactory, GroupFactory
+from student.roles import CourseObserverRole
+from student.tests.factories import CourseEnrollmentFactory, UserFactory, GroupFactory, CourseAccessRoleFactory
 from openedx.core.djangoapps.content.course_overviews.models import CourseOverview
 from xmodule.modulestore.tests.factories import CourseFactory
 from edx_solutions_api_integration.test_utils import (
@@ -413,6 +414,26 @@ class OrganizationsApiTests(ModuleStoreTestCase, APIClientMixin):
         self.assertEqual(len(response.data[0]['enrolled_users']), 2)
         self.assertEqual(response.data[1]['id'], unicode(courses[1].id))
         self.assertEqual(len(response.data[1]['enrolled_users']), 1)
+
+    def test_organizations_courses_get_exclude_admins(self):
+        organization = self.setup_test_organization()
+        course = CourseFactory.create()
+        users = UserFactory.create_batch(2)
+        CourseOverview.get_from_id(course.id)
+
+        for i, user in enumerate(users):
+            user.organizations.add(organization['id'])
+            CourseEnrollmentFactory.create(user=users[i], course_id=course.id)
+
+        CourseAccessRoleFactory.create(user=users[1], course_id=course.id, role=CourseObserverRole.ROLE)
+
+        test_uri = '{}{}/'.format(self.base_organizations_uri, organization['id'])
+        courses_uri = '{}courses/?exclude_admins=True'.format(test_uri)
+        response = self.do_get(courses_uri)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]['id'], unicode(course.id))
+        self.assertEqual(len(response.data[0]['enrolled_users']), 1)
 
     def test_organizations_courses_get_organization_user_with_no_course_enrollment(self):
         organization = self.setup_test_organization()
