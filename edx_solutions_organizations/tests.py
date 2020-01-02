@@ -447,7 +447,7 @@ class OrganizationsApiTests(ModuleStoreTestCase, APIClientMixin):
 
     def test_organizations_courses_search_by_mobile_available(self):
         organization = self.setup_test_organization()
-        courses = CourseFactory.create_batch(2)
+        courses = CourseFactory.create_batch(2, mobile_available=False)
         mobile_course = CourseFactory.create(mobile_available=True)
         courses.append(mobile_course)
         users = UserFactory.create_batch(3)

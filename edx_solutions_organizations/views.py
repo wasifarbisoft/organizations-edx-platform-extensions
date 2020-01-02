@@ -300,9 +300,9 @@ class OrganizationsViewSet(SecurePaginatedModelViewSet):
         enrollments = {}
         course_ids = []
         for (course_id, user_id) in enrollment_qs:
-            enrollments.setdefault(course_id, []).append(user_id)
-            if course_id not in course_ids:
-                course_ids.append(course_id)
+            enrollments.setdefault(course_id.to_deprecated_string(), []).append(user_id)
+            if course_id.to_deprecated_string() not in course_ids:
+                course_ids.append(course_id.to_deprecated_string())
 
         course_keys = map(get_course_key, filter(None, course_ids))
         if request.query_params.get('mobile_available'):
