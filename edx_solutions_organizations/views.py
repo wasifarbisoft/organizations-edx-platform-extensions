@@ -5,7 +5,7 @@ import json
 from django.conf import settings
 from django.contrib.auth.models import User, Group
 from django.core.exceptions import ObjectDoesNotExist
-from django.db.models import Sum, F, Count, Prefetch
+from django.db.models import Sum, F, Count, Prefetch, Case, When
 from django.db import IntegrityError
 from django.utils.translation import ugettext as _
 from openedx.core.djangoapps.content.course_overviews.models import CourseOverview
@@ -67,7 +67,11 @@ class OrganizationsViewSet(SecurePaginatedModelViewSet):
             queryset = queryset.filter(display_name=display_name)
 
         self.queryset = queryset.annotate(
-            number_of_courses=Count('users__courseenrollment__course_id', distinct=True)
+            number_of_courses=Count(
+                Case(
+                    When(users__courseenrollment__is_active=True, then=F('users__courseenrollment__course_id'))
+                ), distinct=True
+            )
         ).annotate(
             number_of_participants=Count('users', distinct=True)
         )
