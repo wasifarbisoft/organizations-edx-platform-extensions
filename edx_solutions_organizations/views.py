@@ -71,24 +71,25 @@ class OrganizationsViewSet(SecurePaginatedModelViewSet):
         if exclude_type:
             q_object = Q()
 
+            # Filtering roles to exclude
             roles_to_exclude = [CourseInstructorRole.ROLE, CourseStaffRole.ROLE, CourseObserverRole.ROLE, CourseAssistantRole.ROLE]
             user_ids = CourseAccessRole.objects.filter(role__in=roles_to_exclude).distinct().values_list('user_id', flat=True)
             q_object.add(~Q(users__courseenrollment__user_id__in=user_ids), Q.AND)
 
-            admin_users = list(queryset.filter(
+            # Filtering company admin users to exclude
+            admin_users = User.objects.filter(id__in=list(queryset.filter(
                 Q(users__groups__groupprofile__name=exclude_type)
-            ).values_list('id', 'users'))
+            ).distinct().values_list('users', flat=True)))
 
-            admin_users_dic = {}
-            for id, user_id in admin_users:
-                user = User.objects.get(id=user_id)
-                main_company = user.organizations.all()[0].id
-                if id != main_company:
-                    admin_users_dic.setdefault(id, []).append(user_id)
+            admin_users_dict = {}
+            for user in admin_users:
+                other_companies = list(user.organizations.all())[1:]
+                for company in other_companies:
+                    admin_users_dict.setdefault(company.id, []).append(user.id)
 
             exclude_admin_users = [
                 Q(id=k) & Q(users__courseenrollment__user_id__in=v) for
-                k, v in admin_users_dic.items()]
+                k, v in admin_users_dict.items()]
             if exclude_admin_users:
                 exclude_admin_users = reduce(lambda a, b: a | b, exclude_admin_users)
                 q_object.add(~Q(exclude_admin_users), Q.AND)
