@@ -11,7 +11,7 @@ from urllib import urlencode
 
 from django.conf import settings
 from django.test.client import Client
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, Group
 from django.core.cache import cache
 from django.test.utils import override_settings
 from django.utils.translation import ugettext as _
@@ -55,6 +55,7 @@ class OrganizationsApiTests(ModuleStoreTestCase, APIClientMixin):
         self.test_organization_contact_phone = '+1 332 232 24234'
         self.test_organization_logo_url = 'org_logo.jpg'
 
+        self.test_group_name = str(uuid.uuid4())
         self.test_user_email = str(uuid.uuid4())
         self.test_user_username = str(uuid.uuid4())
         self.test_user = User.objects.create(
@@ -190,6 +191,47 @@ class OrganizationsApiTests(ModuleStoreTestCase, APIClientMixin):
         response = self.do_get('{}?page_size=0'.format(test_uri))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), len(organizations))
+
+    def test_organizations_list_get_exclude_admins(self):
+        courses = CourseFactory.create_batch(2)
+        users = UserFactory.create_batch(2)
+
+        organizations = []
+        for i in xrange(2):
+            data = {
+                'name': 'Test Organization {}'.format(i),
+                'display_name': 'Test Name {}'.format(i),
+                'contact_name': 'Test Contact {}'.format(i),
+                'contact_email': 'test{}@test.com'.format(i),
+                'contact_phone': '12313{}'.format(i),
+            }
+            organizations.append(self.setup_test_organization(org_data=data))
+
+        for i, user in enumerate(users):
+            user.organizations.add(organizations[i]['id'])
+            CourseEnrollmentFactory.create(user=user, course_id=courses[i].id)
+
+        test_uri = '{}'.format(self.base_organizations_uri)
+        response = self.do_get(test_uri)
+        self.assertEqual(response.data['results'][1]['number_of_courses'], 1)
+
+        # make an group
+        data = {'name': self.test_group_name, 'type': 'permission'}
+        response = self.do_post(self.base_groups_uri, data)
+        self.assertEqual(response.status_code, 201)
+
+        group_id = response.data['id']
+        group = Group.objects.get(id=group_id)
+        users[0].organizations.add(organizations[1]['id'])
+        users[0].groups.add(group)
+
+        # test without excluding admin
+        response = self.do_get(test_uri)
+        self.assertEqual(response.data['results'][1]['number_of_courses'], 2)
+
+        # test excluding admin
+        response = self.do_get('{}?type={}'.format(test_uri, self.test_group_name))
+        self.assertEqual(response.data['results'][1]['number_of_courses'], 1)
 
     def test_organizations_list_number_of_participants(self):
         """
