@@ -88,8 +88,8 @@ class OrganizationsViewSet(SecurePaginatedModelViewSet):
                     admin_users_dict.setdefault(company.id, []).append(user.id)
 
             exclude_admin_users = [
-                Q(id=k) & Q(users__courseenrollment__user_id__in=v) for
-                k, v in admin_users_dict.items()]
+                Q(id=org_id) & Q(users__courseenrollment__user_id__in=users) for
+                org_id, users in admin_users_dict.items()]
             if exclude_admin_users:
                 exclude_admin_users = reduce(lambda a, b: a | b, exclude_admin_users)
                 q_object.add(~Q(exclude_admin_users), Q.AND)
