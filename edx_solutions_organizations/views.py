@@ -2,10 +2,11 @@
 
 """ ORGANIZATIONS API VIEWS """
 import json
+from functools import reduce
 from django.conf import settings
 from django.contrib.auth.models import User, Group
 from django.core.exceptions import ObjectDoesNotExist
-from django.db.models import Sum, F, Count, Prefetch, Case, When
+from django.db.models import Sum, F, Count, Prefetch, Case, When, Q
 from django.db import IntegrityError
 from django.utils.translation import ugettext as _
 from openedx.core.djangoapps.content.course_overviews.models import CourseOverview
@@ -57,6 +58,7 @@ class OrganizationsViewSet(SecurePaginatedModelViewSet):
         self.serializer_class = OrganizationWithCourseCountSerializer
         queryset = self.get_queryset()
 
+        exclude_type = request.query_params.get('type', None)
         ids = request.query_params.get('ids', None)
         if ids:
             ids = [int(id) for id in ids.split(',')]
@@ -66,13 +68,46 @@ class OrganizationsViewSet(SecurePaginatedModelViewSet):
         if display_name is not None:
             queryset = queryset.filter(display_name=display_name)
 
-        self.queryset = queryset.annotate(
-            number_of_courses=Count(
-                Case(
-                    When(users__courseenrollment__is_active=True, then=F('users__courseenrollment__course_id'))
-                ), distinct=True
+        if exclude_type:
+            q_object = Q()
+
+            # Filtering roles to exclude
+            roles_to_exclude = [CourseInstructorRole.ROLE, CourseStaffRole.ROLE, CourseObserverRole.ROLE, CourseAssistantRole.ROLE]
+            user_ids = CourseAccessRole.objects.filter(role__in=roles_to_exclude).distinct().values_list('user_id', flat=True)
+            q_object.add(~Q(users__courseenrollment__user_id__in=user_ids), Q.AND)
+
+            # Filtering company admin users to exclude
+            admin_users = User.objects.filter(id__in=list(queryset.filter(
+                Q(users__groups__groupprofile__name=exclude_type)
+            ).distinct().values_list('users', flat=True)))
+
+            admin_users_dict = {}
+            for user in admin_users:
+                other_companies = list(user.organizations.all())[1:]
+                for company in other_companies:
+                    admin_users_dict.setdefault(company.id, []).append(user.id)
+
+            # list of users with corresponding organizations to exclude
+            exclude_admin_users = [
+                Q(id=org_id) & Q(users__courseenrollment__user_id__in=users) for
+                org_id, users in admin_users_dict.items()]
+            if exclude_admin_users:
+                exclude_admin_users = reduce(lambda a, b: a | b, exclude_admin_users)
+                q_object.add(~Q(exclude_admin_users), Q.AND)
+
+            # annotating queryset to get number of courses
+            queryset = queryset.annotate(
+                number_of_courses=Count(
+                    Case(
+                        When(q_object, then=F('users__courseenrollment__course_id'))
+                    ), distinct=True
+                )
             )
-        ).annotate(
+        else:
+            queryset = queryset.annotate(
+                number_of_courses=Count('users__courseenrollment__course_id', distinct=True)
+            )
+        self.queryset = queryset.annotate(
             number_of_participants=Count('users', distinct=True)
         )
 
