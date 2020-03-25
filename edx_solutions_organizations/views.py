@@ -87,6 +87,7 @@ class OrganizationsViewSet(SecurePaginatedModelViewSet):
                 for company in other_companies:
                     admin_users_dict.setdefault(company.id, []).append(user.id)
 
+            # list of users with corresponding organizations to exclude
             exclude_admin_users = [
                 Q(id=org_id) & Q(users__courseenrollment__user_id__in=users) for
                 org_id, users in admin_users_dict.items()]
@@ -94,6 +95,7 @@ class OrganizationsViewSet(SecurePaginatedModelViewSet):
                 exclude_admin_users = reduce(lambda a, b: a | b, exclude_admin_users)
                 q_object.add(~Q(exclude_admin_users), Q.AND)
 
+            # annotating queryset to get number of courses
             queryset = queryset.annotate(
                 number_of_courses=Count(
                     Case(
