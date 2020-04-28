@@ -263,7 +263,10 @@ class OrganizationsViewSet(SecurePaginatedModelViewSet):
             except ObjectDoesNotExist:
                 message = 'User {} does not exist'.format(user_id)
                 return Response({"detail": message}, status.HTTP_400_BAD_REQUEST)
-            organization = self.get_object()
+            try:
+                organization = Organization.objects.select_for_update().get(id=pk)
+            except Organization.DoesNotExist:
+                return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
             organization.users.add(user)
             organization.save()
             return Response({}, status=status.HTTP_201_CREATED)
