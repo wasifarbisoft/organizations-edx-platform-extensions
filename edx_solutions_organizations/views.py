@@ -95,6 +95,9 @@ class OrganizationsViewSet(SecurePaginatedModelViewSet):
                 exclude_admin_users = reduce(lambda a, b: a | b, exclude_admin_users)
                 q_object.add(~Q(exclude_admin_users), Q.AND)
 
+            # filter only users courses that are enrolled i.e is_active=True.
+            q_object.add(Q(users__courseenrollment__is_active=True), Q.AND)
+
             # annotating queryset to get number of courses
             queryset = queryset.annotate(
                 number_of_courses=Count(
